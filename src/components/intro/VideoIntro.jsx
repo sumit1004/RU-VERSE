@@ -55,9 +55,8 @@ export default function VideoIntro({ onComplete }) {
     const video = videoRef.current;
     if (!video) return;
 
-    // Ensure programmatic muted flags are set for mobile autoplay policies
     video.muted = false;
-    video.defaultMuted = true;
+    video.defaultMuted = false;
 
     // Safety timeout to ensure user never gets stuck (max 20 seconds)
     const timeout = setTimeout(() => {
