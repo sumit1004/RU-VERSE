@@ -1,0 +1,287 @@
+/* ==========================================================================
+   Cinematic Entry Gate — RUVERSE 2026
+   ========================================================================== */
+
+.cinematic-entry-gate {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100000;
+    background-color: #010308;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.5s ease-out;
+}
+
+.cinematic-entry-gate.is-exiting {
+    opacity: 0;
+    visibility: hidden;
+    filter: blur(8px);
+    pointer-events: none;
+}
+
+/* Background gradient & ambient glow */
+.entry-gate-space-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #030a16 0%, #01040a 60%, #000205 100%);
+    z-index: 1;
+}
+
+.entry-gate-nebula-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90vw;
+    height: 90vh;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at center,
+            rgba(0, 229, 255, 0.04) 0%,
+            rgba(0, 140, 255, 0.02) 40%,
+            transparent 70%);
+    pointer-events: none;
+    z-index: 2;
+    animation: entryNebulaPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes entryNebulaPulse {
+    0% {
+        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+}
+
+.entry-gate-canvas-wrapper {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Main Content Container */
+.entry-gate-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    max-width: 900px;
+    width: 100%;
+    animation: entryFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes entryFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Top Institution Tag */
+.entry-gate-top-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    color: rgba(0, 229, 255, 0.75);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+}
+
+.entry-gate-top-tag .tag-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: #00e5ff;
+    box-shadow: 0 0 8px #00e5ff;
+}
+
+/* Primary Cinematic Quote */
+.entry-gate-quote {
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 300;
+    font-size: clamp(1.6rem, 4vw, 3.2rem);
+    line-height: 1.35;
+    letter-spacing: 0.18em;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin: 0 0 24px 0;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.25), 0 0 48px rgba(0, 229, 255, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.entry-gate-quote .quote-line {
+    display: block;
+}
+
+/* Subtitle Section */
+.entry-gate-subtitle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: clamp(0.75rem, 1.5vw, 0.95rem);
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: rgba(255, 255, 255, 0.65);
+    text-transform: uppercase;
+    margin-bottom: 44px;
+}
+
+.entry-gate-subtitle .subtitle-brand {
+    color: #00e5ff;
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+.entry-gate-subtitle .subtitle-divider {
+    color: rgba(0, 229, 255, 0.4);
+    font-size: 0.7rem;
+}
+
+/* Enter Button styling */
+.entry-gate-action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.entry-gate-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 40px;
+    min-height: 48px;
+    background: rgba(2, 10, 24, 0.65);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 4px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: #ffffff;
+    text-transform: uppercase;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.08), inset 0 0 15px rgba(0, 229, 255, 0.03);
+}
+
+.entry-gate-btn .btn-arrow {
+    font-size: 1.1rem;
+    line-height: 1;
+    color: #00e5ff;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.entry-gate-btn:hover {
+    background: rgba(0, 229, 255, 0.12);
+    border-color: rgba(0, 229, 255, 0.85);
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.3), inset 0 0 20px rgba(0, 229, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.entry-gate-btn:hover .btn-arrow {
+    transform: translateX(5px);
+}
+
+.entry-gate-btn:focus-visible {
+    outline: 2px solid #00e5ff;
+    outline-offset: 4px;
+}
+
+.entry-gate-btn:active {
+    transform: translateY(1px);
+    background: rgba(0, 229, 255, 0.2);
+}
+
+.entry-gate-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .entry-gate-content {
+        animation: none;
+        opacity: 1;
+    }
+
+    .entry-gate-nebula-glow {
+        animation: none;
+    }
+
+    .cinematic-entry-gate {
+        transition: opacity 0.2s linear;
+    }
+
+    .entry-gate-btn:hover .btn-arrow {
+        transform: none;
+    }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 767px) {
+    .entry-gate-content {
+        padding: 20px 16px;
+    }
+
+    .entry-gate-top-tag {
+        font-size: 0.62rem;
+        letter-spacing: 0.18em;
+        margin-bottom: 20px;
+    }
+
+    .entry-gate-quote {
+        font-size: 1.45rem;
+        letter-spacing: 0.12em;
+        gap: 4px;
+        margin-bottom: 20px;
+    }
+
+    .entry-gate-subtitle {
+        font-size: 0.72rem;
+        letter-spacing: 0.2em;
+        gap: 8px;
+        margin-bottom: 36px;
+    }
+
+    .entry-gate-btn {
+        width: 100%;
+        max-width: 280px;
+        padding: 16px 28px;
+        font-size: 0.82rem;
+        letter-spacing: 0.18em;
+    }
+}

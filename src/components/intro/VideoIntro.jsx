@@ -5,11 +5,11 @@ const MOBILE_VIDEO_PATH = '/videos/loading_mobile.mp4';
 
 /**
  * VideoIntro Component:
- * - Fullscreen video intro experience (plays once automatically)
+ * - Fullscreen video intro experience (plays once automatically after entry gate click)
  * - Single-source responsive selection:
  *    - Mobile (< 768px): /videos/loading_mobile.mp4
  *    - Desktop (>= 768px): /videos/opening.mp4
- * - Plays only the target video (never loads both videos  simultaneously)
+ * - Plays only the target video (never loads both videos simultaneously)
  * - Auto-fallback on playback block or missing asset so user is never stuck
  * - Locks body scrolling while active and restores it cleanly upon completion
  */
@@ -18,13 +18,27 @@ export default function VideoIntro({ onComplete }) {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const hasFinishedRef = useRef(false);
 
-  // Detect mobile viewport using matchMedia on mount
-  const [isMobile] = useState(() => {
+  // Viewport media-query detection
+  const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.matchMedia('(max-width: 767px)').matches;
     }
     return false;
   });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const update = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    update();
+    mediaQuery.addEventListener('change', update);
+
+    return () => {
+      mediaQuery.removeEventListener('change', update);
+    };
+  }, []);
 
   const videoSrc = isMobile ? MOBILE_VIDEO_PATH : DESKTOP_VIDEO_PATH;
 
@@ -55,8 +69,8 @@ export default function VideoIntro({ onComplete }) {
     const video = videoRef.current;
     if (!video) return;
 
-    video.muted = false;
-    video.defaultMuted = false;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('autoplay', '');
 
     // Safety timeout to ensure user never gets stuck (max 20 seconds)
     const timeout = setTimeout(() => {
@@ -66,31 +80,48 @@ export default function VideoIntro({ onComplete }) {
       }
     }, 20000);
 
-    // Attempt autoplay immediately
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((error) => {
-        console.warn('[RU VERSE] Autoplay note:', error);
-      });
-    }
+    const tryAutoplay = async () => {
+      if (hasFinishedRef.current) return;
+      const vid = videoRef.current;
+      if (!vid) return;
 
-    // Allow user tap anywhere on screen to trigger play if autoplay was blocked
-    const handleUserInteraction = () => {
-      if (video && video.paused) {
-        video.play().catch(() => handleFinish());
+      try {
+        // Attempt unmuted play first since user triggered "ENTER THE VERSE"
+        vid.muted = false;
+        await vid.play();
+        console.log('[RU VERSE] Video intro playing with audio');
+      } catch (audioErr) {
+        console.warn('[RU VERSE] Unmuted autoplay blocked, trying muted play:', audioErr);
+        try {
+          vid.muted = true;
+          vid.defaultMuted = true;
+          vid.setAttribute('muted', '');
+          await vid.play();
+          console.log('[RU VERSE] Video intro playing muted fallback');
+        } catch (mutedErr) {
+          console.warn('[RU VERSE] Muted playback blocked:', mutedErr);
+        }
       }
     };
-    window.addEventListener('click', handleUserInteraction, { once: true });
-    window.addEventListener('touchstart', handleUserInteraction, { once: true });
+
+    // Ensure the new source is loaded properly before playback
+    video.load();
+
+    // Attempt to play immediately
+    tryAutoplay();
+
+    // Listen for readiness events to retry if the immediate attempt fails
+    video.addEventListener('canplay', tryAutoplay, { once: true });
+    video.addEventListener('loadedmetadata', tryAutoplay, { once: true });
 
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('click', handleUserInteraction);
-      window.removeEventListener('touchstart', handleUserInteraction);
+      video.removeEventListener('canplay', tryAutoplay);
+      video.removeEventListener('loadedmetadata', tryAutoplay);
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     };
-  }, [handleFinish]);
+  }, [videoSrc, handleFinish]);
 
   return (
     <div className={`video-intro ${isFadingOut ? 'is-fading-out' : ''}`}>
