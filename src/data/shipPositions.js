@@ -25,7 +25,7 @@ export const DEFAULT_SHIP_POSITIONS = {
       "scale": 1.1
     },
     "mobile": {
-      "screenX": 0.5,
+      "screenX": 0.90,
       "screenY": 0.32,
       "targetZ": 0,
       "rotationX": 0.15,
