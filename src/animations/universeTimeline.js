@@ -1,0 +1,92 @@
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
+
+/**
+ * Creates ScrollTrigger listeners for the Hero and 4 planetary stages on the Main Website.
+ * Direct scrub controls planet entry, rotation, content panel HUD, and transitions.
+ */
+export function createUniverseTimeline({ onSectionUpdate }) {
+  const triggers = [];
+
+  // Hero Section Trigger
+  const heroEl = document.getElementById('hero-section');
+  if (heroEl) {
+    const heroTrigger = ScrollTrigger.create({
+      trigger: heroEl,
+      start: 'top top',
+      end: 'bottom top',
+      onEnter: () => {
+        onSectionUpdate(-1, 0);
+      },
+      onEnterBack: () => {
+        onSectionUpdate(-1, 0);
+      },
+    });
+    triggers.push(heroTrigger);
+  }
+
+  // Planetary Viewport-Pinned Sections (4 Sectors)
+  const sections = document.querySelectorAll('.universe-pinned-section');
+  sections.forEach((section, index) => {
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: '+=140%',
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.5,
+      onUpdate: (self) => {
+        if (self.isActive) {
+          onSectionUpdate(index, self.progress);
+        }
+      },
+      onEnter: () => {
+        onSectionUpdate(index, 0.1);
+      },
+      onEnterBack: () => {
+        onSectionUpdate(index, 0.9);
+      },
+      onLeave: () => {
+        if (index < sections.length - 1) {
+          onSectionUpdate(index + 1, 0.0);
+        }
+      },
+      onLeaveBack: () => {
+        if (index > 0) {
+          onSectionUpdate(index - 1, 1.0);
+        } else {
+          onSectionUpdate(-1, 0);
+        }
+      }
+    });
+
+    triggers.push(trigger);
+  });
+
+  // Global smooth navigation helper
+  window.__navigateToSection = (targetIndex) => {
+    if (targetIndex === -1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (targetIndex < 0 || targetIndex >= sections.length) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    // Planet section triggers start after hero trigger if present
+    const planetTriggers = triggers.filter(t => t.trigger !== heroEl);
+    const targetTrigger = planetTriggers[targetIndex];
+    if (targetTrigger) {
+      window.scrollTo({
+        top: targetTrigger.start + 10,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  return () => {
+    triggers.forEach((t) => t.kill());
+  };
+}
