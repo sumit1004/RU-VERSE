@@ -179,14 +179,14 @@
 /* Primary Cinematic Quote */
 .entry-gate-quote {
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 300;
+    font-weight: 800;
     font-size: clamp(1.65rem, 3.8vw, 3.2rem);
     line-height: 1.32;
     letter-spacing: 0.18em;
-    color: #ffffff;
+    color: #eeee09;
     text-transform: uppercase;
     margin: 0 0 32px 0;
-    text-shadow: 0 0 24px rgba(255, 255, 255, 0.3), 0 0 48px rgba(0, 229, 255, 0.15);
+    /* text-shadow: 0 0 24px rgba(255, 255, 255, 0.3), 0 0 48px rgba(0, 229, 255, 0.15); */
     display: flex;
     flex-direction: column;
     align-items: center;

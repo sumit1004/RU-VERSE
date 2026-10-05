@@ -1,5 +1,6 @@
 import React from 'react';
 import PlanetHUD from '../PlanetHUD';
+import ScrollCue from './ScrollCue';
 import { universeSections } from '../../data/universeData';
 
 export default function ContactSection({ active, progress }) {
@@ -33,7 +34,7 @@ export default function ContactSection({ active, progress }) {
               <span>TRANSMISSION COMPLETE // ALL CHANNELS ACTIVE</span>
             </div>
 
-            <h2 className="closing-headline">THE FUTURE IS WAITING.</h2>
+            <h2 className="closing-headline">THE FUTURE IS HERE.</h2>
 
             <div className="closing-event-identity">
               <span className="closing-brand">RUVERSE 2026</span>
@@ -43,9 +44,7 @@ export default function ContactSection({ active, progress }) {
               <span className="closing-univ">RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
             </div>
 
-            <div className="closing-motto-row">
-              <span>BUILD. EXPLORE. CREATE.</span>
-            </div>
+
           </div>
 
           {/* Minimal in-section footer */}
@@ -59,10 +58,7 @@ export default function ContactSection({ active, progress }) {
           </div>
         </div>
 
-        <div className="scroll-cue">
-          <span>TRANSMISSION COMPLETE</span>
-          <div className="cue-arrow">✦</div>
-        </div>
+        <ScrollCue text="TRANSMISSION COMPLETE" isEnd={true} />
       </div>
     </section>
   );

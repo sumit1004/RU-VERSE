@@ -75,7 +75,10 @@ export default function MainWebsite({ quality }) {
              SECTOR 04: CONTACT (with in-section closing & footer)
       */}
       <main className="universe-scroll-wrapper">
-        <HeroSection />
+        <HeroSection
+          active={activeSection === -1}
+          progress={activeSection === -1 ? sectionProgress : (activeSection < -1 ? 0 : 1)}
+        />
 
         <RUVerseSection
           active={activeSection === 0}

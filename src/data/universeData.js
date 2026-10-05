@@ -28,7 +28,7 @@ export const universeSections = [
     entry: 'top-right',
     color: '#b29cff',
     model: ASSETS.about,
-    description: 'In a university not so far away, a group of students decided that technology deserved more than classrooms and assignments. They wanted a place to build, compete, experiment, explore and create. And so, RUVERSE was born.',
+    description: ' RUVERSE is the annual technical festival of Rungta International Skills University, bringing together four days of technology, innovation, competitions, workshops, showcases and experiences.',
     coordinates: '26.44° N / 73.22° E'
   },
   {
@@ -42,8 +42,7 @@ export const universeSections = [
     description: 'From code and hardware to gaming, innovation and everything in between, RUVERSE has something for every kind of tech enthusiast. Explore the arenas below.',
     cta: 'EXPLORE EVENTS',
     targetAnchor: '#section-contact',
-    coordinates: '06.73° S / 114.19° W',
-    highlights: ['COMPETE', 'CREATE', 'CONQUER']
+    coordinates: '06.73° S / 114.19° W'
   },
   {
     id: 'contact',

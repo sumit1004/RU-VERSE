@@ -59,16 +59,16 @@ export default function CommandBar({ active = -1, onNavigate }) {
         {/* Center Anchor: Angular Sci-Fi Frame with RU VERSE Title */}
         <div className="ruverse-center-anchor">
           {/* Left Wing Bracket Line */}
-          <div className="ruverse-wing-connector ruverse-wing-connector--left" aria-hidden="true">
+          {/* <div className="ruverse-wing-connector ruverse-wing-connector--left" aria-hidden="true">
             <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="1.2">
               <path d="M2 10 H18 L28 3" strokeLinecap="round" />
               <path d="M2 10 H18 L28 17" strokeLinecap="round" />
               <circle cx="2" cy="10" r="1.5" fill="currentColor" />
             </svg>
-          </div>
+          </div> */}
 
           {/* Central Interactive Brand Button */}
-          <button
+          {/* <button
             type="button"
             className={`ruverse-brand-btn ${isRuVerseActive ? 'is-active' : ''}`}
             onClick={() => onNavigate(0)}
@@ -77,16 +77,16 @@ export default function CommandBar({ active = -1, onNavigate }) {
           >
             <span className="ruverse-brand-title">RU VERSE</span>
             <span className="ruverse-brand-sub">TECHFEST 2026</span>
-          </button>
+          </button> */}
 
           {/* Right Wing Bracket Line */}
-          <div className="ruverse-wing-connector ruverse-wing-connector--right" aria-hidden="true">
+          {/* <div className="ruverse-wing-connector ruverse-wing-connector--right" aria-hidden="true">
             <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="1.2">
               <path d="M30 10 H14 L4 3" strokeLinecap="round" />
               <path d="M30 10 H14 L4 17" strokeLinecap="round" />
               <circle cx="30" cy="10" r="1.5" fill="currentColor" />
             </svg>
-          </div>
+          </div> */}
         </div>
 
         {/* Desktop Right Wing: EVENTS, CONTACT */}

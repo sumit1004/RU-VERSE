@@ -265,15 +265,15 @@ export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
             {/* 4. Foreground Central Typography & Action */}
             <div className="entry-gate-content">
                 {/* Top Tag */}
-                <div className="entry-gate-top-tag">
+                {/* <div className="entry-gate-top-tag">
                     <span className="tag-dot" />
                     <span>RUVERSE 2026</span>
-                </div>
+                </div> */}
 
                 {/* Main Cinematic Line */}
                 <h1 className="entry-gate-quote">
-                    <span className="quote-line line-1">THE FUTURE BEGINS</span>
-                    <span className="quote-line line-2">WHERE THE UNKNOWN ENDS.</span>
+                    <span className="quote-line line-1">WELCOME TO </span>
+                    <span className="quote-line line-2">RUNGTA UNIVERSITY'S ANNUAL TECHFEST</span>
                 </h1>
 
                 {/* Primary Interactive Button */}
@@ -286,7 +286,7 @@ export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
                         disabled={hasEntered}
                         aria-label="Enter the Verse"
                     >
-                        <span className="btn-text">ENTER THE VERSE</span>
+                        <span className="btn-text">ENTER THE Future</span>
                         <span className="btn-arrow" aria-hidden="true">
                             →
                         </span>

@@ -1,5 +1,6 @@
 import React from 'react';
 import PlanetHUD from '../PlanetHUD';
+import ScrollCue from './ScrollCue';
 import { universeSections } from '../../data/universeData';
 
 export default function AboutSection({ active, progress }) {
@@ -32,9 +33,8 @@ export default function AboutSection({ active, progress }) {
           <div className="editorial-story-flow">
 
             <p className="editorial-body">
-              RUVERSE is the annual technical festival of Rungta International
-              Skills University, bringing together four days of technology,
-              innovation, competitions, workshops, showcases and experiences.
+
+              In a university not so far away, a group of students decided that technology deserved more than classrooms and assignments. They wanted a place to build, compete, experiment, explore and create. And so, RUVERSE was born.
             </p>
             <p className="editorial-galaxy">
               From young Padawans taking their first steps into technology to
@@ -44,10 +44,7 @@ export default function AboutSection({ active, progress }) {
           </div>
         </div>
 
-        <div className="scroll-cue">
-          <span>SCROLL TO NAVIGATE DEEP SPACE</span>
-          <div className="cue-arrow">↓</div>
-        </div>
+        <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
       </div>
     </section>
   );

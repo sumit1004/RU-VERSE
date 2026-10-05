@@ -1,5 +1,6 @@
 import React from 'react';
 import PlanetHUD from '../PlanetHUD';
+import ScrollCue from './ScrollCue';
 import { universeSections } from '../../data/universeData';
 import { eventsData } from '../../data/eventsData';
 
@@ -62,10 +63,7 @@ export default function EventsSection({ active, progress }) {
 
         </div>
 
-        <div className="scroll-cue">
-          <span>SCROLL TO NAVIGATE DEEP SPACE</span>
-          <div className="cue-arrow">↓</div>
-        </div>
+        <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
       </div>
     </section>
   );

@@ -95,7 +95,7 @@ button {
 .main-hero-section {
   position: relative;
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,11 +123,36 @@ button {
   width: 100%;
 }
 
+.hero-logo-reveal-container {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-logo-reveal-edge {
+  position: absolute;
+  top: 5%;
+  bottom: 5%;
+  width: 2px;
+  background: #00e5ff;
+  box-shadow:
+    0 0 10px #00e5ff,
+    0 0 20px rgba(0, 229, 255, 0.8),
+    0 0 35px rgba(0, 229, 255, 0.4);
+  pointer-events: none;
+  transform: translateX(-50%);
+  opacity: 0.9;
+  border-radius: 1px;
+}
+
 .hero-logo-img {
   width: clamp(350px, 55vw, 600px);
   height: auto;
-  /* filter: drop-shadow(0 0 25px rgba(213, 232, 8, 0.496)) drop-shadow(0 0 60px rgba(255, 253, 142, 0.808)); */
-  transition: transform 0.4s ease;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  will-change: clip-path, opacity, filter;
 }
 
 .logo {
@@ -494,39 +519,115 @@ button {
   transform: translateX(4px);
 }
 
+/* ==========================================================================
+   High-Visibility Sci-Fi Scroll Navigation Cue
+   ========================================================================== */
 .scroll-cue {
   position: absolute;
-  bottom: 12vh;
+  bottom: 11vh;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  color: var(--ink-muted);
   pointer-events: none;
+  z-index: 15;
+  user-select: none;
 }
 
-.cue-arrow {
-  font-size: 14px;
-  animation: floatArrow 2s infinite ease-in-out;
+/* Sci-Fi Mouse Scroll Indicator */
+.scroll-mouse-icon {
+  width: 22px;
+  height: 34px;
+  border: 2px solid rgba(0, 229, 255, 0.7);
+  border-radius: 12px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), inset 0 0 8px rgba(0, 229, 255, 0.15);
+  background: rgba(4, 12, 24, 0.45);
 }
 
-@keyframes floatArrow {
+.scroll-mouse-wheel {
+  width: 3px;
+  height: 7px;
+  background: #00e5ff;
+  border-radius: 2px;
+  position: absolute;
+  top: 5px;
+  box-shadow: 0 0 8px #00e5ff;
+  animation: scrollWheelPulse 1.8s infinite ease-in-out;
+}
 
-  0%,
-  100% {
+@keyframes scrollWheelPulse {
+  0% {
     transform: translateY(0);
-    opacity: 0.5;
-  }
-
-  50% {
-    transform: translateY(6px);
     opacity: 1;
   }
+  60% {
+    transform: translateY(11px);
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+/* Prominent Sci-Fi Text Label */
+.scroll-cue-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: #8ed1ff;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+  margin-top: 2px;
+}
+
+/* Downward Pulse Chevrons */
+.scroll-chevrons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -4px;
+  gap: -6px;
+}
+
+.chevron-arrow {
+  font-size: 16px;
+  line-height: 10px;
+  color: #00e5ff;
+  text-shadow: 0 0 8px #00e5ff;
+  animation: chevronFade 1.8s infinite ease-in-out;
+}
+
+.chevron-arrow.chevron-1 {
+  animation-delay: 0s;
+}
+
+.chevron-arrow.chevron-2 {
+  animation-delay: 0.3s;
+  opacity: 0.6;
+}
+
+@keyframes chevronFade {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+
+.scroll-end-icon {
+  font-size: 18px;
+  color: var(--accent-gold);
+  text-shadow: 0 0 12px var(--accent-gold);
 }
 
 /* Command Bar styles are modularized in src/components/CommandBar/CommandBar.css */
@@ -717,14 +818,14 @@ button {
 .editorial-body {
   font-size: clamp(13px, 1.2vw, 15px);
   line-height: 1.65;
-  color: #cfd8dc;
+  color: #dcdccf;
 }
 
 .editorial-galaxy {
   font-family: var(--font-mono);
   font-size: clamp(12px, 1.1vw, 14px);
   line-height: 1.7;
-  color: var(--accent-ice);
+  color: yellow;
   border-left: 2px solid rgba(0, 229, 255, 0.4);
   padding-left: 14px;
   margin-top: 6px;

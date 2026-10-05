@@ -2,12 +2,13 @@ import React, { Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import StarField from './StarField';
 import PlanetaryUniverse from './PlanetaryUniverse';
+import HeroShipFlight from './HeroShipFlight';
 import { updateSmoothedPointer } from '../hooks/useGlobalPointer';
 import { useCalibrationStore } from '../hooks/useCalibrationState';
 
 function CanvasContent({
-  activeSection = 0,
-  sectionProgress = 0.5,
+  activeSection = -1,
+  sectionProgress = 0,
   quality
 }) {
   const reducedMotion = quality?.reducedMotion || false;
@@ -31,10 +32,23 @@ function CanvasContent({
       <color attach="background" args={['#010208']} />
       <fog attach="fog" args={['#010208', 15, 60]} />
 
+      {/* Global Lighting for Space & Spacecraft */}
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[5, 8, 7]} intensity={3.0} color="#ffffff" />
+      <pointLight position={[-6, -4, 5]} intensity={8} distance={20} color="#8ed1ff" />
+
       {/* Global Dense Starfield (Persistent across planetary universe) */}
       <StarField
         count={quality?.stars || 4800}
         quality={quality?.tier || 'high'}
+        reducedMotion={reducedMotion}
+      />
+
+      {/* Cinematic Hero Spaceship Flight (Active during Hero Section -1) */}
+      <HeroShipFlight
+        activeSection={activeSection}
+        sectionProgress={sectionProgress}
+        quality={quality}
         reducedMotion={reducedMotion}
       />
 

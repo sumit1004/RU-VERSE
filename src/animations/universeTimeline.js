@@ -10,17 +10,31 @@ gsap.registerPlugin(ScrollTrigger);
 export function createUniverseTimeline({ onSectionUpdate }) {
   const triggers = [];
 
-  // Hero Section Trigger
+  // Hero Section Trigger (Pinned at center while 3D ship flies and reveals logo)
   const heroEl = document.getElementById('hero-section');
   if (heroEl) {
     const heroTrigger = ScrollTrigger.create({
       trigger: heroEl,
       start: 'top top',
-      end: 'bottom top',
+      end: '+=160%',
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.5,
+      onUpdate: (self) => {
+        if (self.isActive) {
+          onSectionUpdate(-1, self.progress);
+        }
+      },
       onEnter: () => {
         onSectionUpdate(-1, 0);
       },
       onEnterBack: () => {
+        onSectionUpdate(-1, 0.99);
+      },
+      onLeave: () => {
+        onSectionUpdate(0, 0);
+      },
+      onLeaveBack: () => {
         onSectionUpdate(-1, 0);
       },
     });

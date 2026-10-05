@@ -47,14 +47,7 @@ export default function PlanetHUD({ section, active, progress }) {
       <h2 className="hud-title">{section.title}</h2>
       {section.tagline && <p className="hud-tagline">{section.tagline}</p>}
 
-      {/* Sector 03: Events Specific Highlights */}
-      {section.id === 'events' && (
-        <div className="hud-highlights">
-          <div className="highlight-pill">COMPETE</div>
-          <div className="highlight-pill">CREATE</div>
-          <div className="highlight-pill">CONQUER</div>
-        </div>
-      )}
+
 
       {/* Description */}
       <p className="hud-desc">{section.description}</p>
