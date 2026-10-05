@@ -100,7 +100,7 @@ export default function MainWebsite({ quality }) {
 
       {/* 4. Fixed Futuristic Command Navigation Bar */}
       <CommandBar
-        active={activeSection >= 0 ? activeSection : 0}
+        active={activeSection}
         onNavigate={handleNavigate}
         mobile={quality?.mobile || false}
       />
