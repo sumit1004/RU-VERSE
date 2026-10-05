@@ -50,8 +50,7 @@ export default function MainWebsite({ quality }) {
       {/* 2. Top Fixed Global HUD Header */}
       <header className="global-hud">
         <div className="hud-cell brand" onClick={() => handleNavigate(-1)}>
-          <span className="hud-logo">RU VERSE</span>
-          <span className="hud-badge">TECHFEST 2026</span>
+          <img className='logo' src="./models/planets/RUI_LOGO_WHITE.png" alt="" />
         </div>
         <div className="hud-cell center-coords">
           <span>ORBITAL FREQUENCY // RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>

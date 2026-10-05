@@ -17,24 +17,13 @@ export default function HeroSection() {
         {/* Techfest Official Logo Badge */}
         <div className="hero-logo-wrapper">
           <img
-            src="/models/planets/techfest_logo.png"
+            src="/models/planets/RUVERSE.png"
             alt="RUVERSE 2026 Logo"
             className="hero-logo-img"
           />
         </div>
 
-        {/* Hero Title & Tagline Hierarchy */}
-        <div className="hero-typography-block">
-          <p className="hero-tagline">Enter the Future</p>
 
-          <div className="hero-meta-divider" />
-
-          <div className="hero-event-meta">
-            <span className="hero-event-date">21–24 OCTOBER</span>
-            <span className="hero-meta-dot">•</span>
-            <span className="hero-institution">RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
-          </div>
-        </div>
       </div>
     </section>
   );

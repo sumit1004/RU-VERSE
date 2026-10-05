@@ -12,11 +12,7 @@ export default function CommandBar({ active = 0, onNavigate, mobile = false }) {
   return (
     <nav className="command-bar" aria-label="Universe Command Navigation">
       <div className="command-bar-inner">
-        <div className="command-logo" onClick={() => onNavigate(-1)} style={{ cursor: 'pointer' }}>
-          <span className="logo-text">RV</span>
-          <span className="logo-slash">/</span>
-          <span className="logo-sub">2026</span>
-        </div>
+
 
         <div className="command-links">
           {universeSections.map((section, index) => {

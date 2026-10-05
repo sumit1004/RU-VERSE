@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cinematic Entry Gate — RUVERSE 2026
+   Cinematic Entry Gate — RUVERSE 2026 (Visual Reference Composition)
    ========================================================================== */
 
 .cinematic-entry-gate {
@@ -28,50 +28,91 @@
     pointer-events: none;
 }
 
-/* Background gradient & ambient glow */
-.entry-gate-space-bg {
+/* Authoritative Fullscreen Background Image */
+.entry-gate-bg-image {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 50% 50%, #030a16 0%, #01040a 60%, #000205 100%);
-    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    display: block;
 }
 
-.entry-gate-nebula-glow {
+/* Subtle Vignette & Central Darkening for Readability */
+.entry-gate-vignette {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 90vw;
-    height: 90vh;
-    transform: translate(-50%, -50%);
+    inset: 0;
     background: radial-gradient(ellipse at center,
-            rgba(0, 229, 255, 0.04) 0%,
-            rgba(0, 140, 255, 0.02) 40%,
-            transparent 70%);
+            rgba(1, 4, 10, 0.35) 0%,
+            rgba(1, 4, 10, 0.55) 55%,
+            rgba(0, 2, 6, 0.85) 100%);
+    z-index: 1;
     pointer-events: none;
-    z-index: 2;
-    animation: entryNebulaPulse 8s ease-in-out infinite alternate;
 }
 
-@keyframes entryNebulaPulse {
-    0% {
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(0.95);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.05);
-    }
-}
-
-.entry-gate-canvas-wrapper {
+/* 4 Spaceships Layer */
+.entry-gate-ships-layer {
     position: absolute;
     inset: 0;
-    z-index: 3;
+    z-index: 2;
     pointer-events: none;
+    overflow: hidden;
 }
 
-/* Main Content Container */
+.entry-ship-container {
+    position: absolute;
+    pointer-events: none;
+    will-change: transform;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.entry-ship-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.15));
+}
+
+/* Ship 01: Upper Left (around 8–18% left, 12–28% top) */
+.entry-ship-01 {
+    top: 14%;
+    left: 9%;
+    width: clamp(140px, 18vw, 260px);
+    max-height: 200px;
+}
+
+/* Ship 02: Upper Right (around 78–90% left, 15–30% top) */
+.entry-ship-02 {
+    top: 16%;
+    right: 8%;
+    width: clamp(180px, 23vw, 330px);
+    max-height: 250px;
+}
+
+/* Ship 03: Lower Left (around 8–22% left, 58–75% top) */
+.entry-ship-03 {
+    bottom: 18%;
+    left: 10%;
+    width: clamp(120px, 15vw, 210px);
+    max-height: 160px;
+}
+
+/* Ship 04: Lower Right (around 76–92% left, 58–76% top) */
+.entry-ship-04 {
+    bottom: 16%;
+    right: 9%;
+    width: clamp(150px, 19vw, 270px);
+    max-height: 200px;
+}
+
+/* Main Center Content */
 .entry-gate-content {
     position: relative;
     z-index: 10;
@@ -83,10 +124,10 @@
     padding: 24px;
     max-width: 900px;
     width: 100%;
-    animation: entryFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: entryContentFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes entryFadeIn {
+@keyframes entryContentFadeIn {
     0% {
         opacity: 0;
         transform: translateY(12px) scale(0.98);
@@ -98,18 +139,21 @@
     }
 }
 
-/* Top Institution Tag */
+/* Top Tag (RUVERSE 2026) */
 .entry-gate-top-tag {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 0.72rem;
+    font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.8rem;
     font-weight: 500;
-    letter-spacing: 0.25em;
-    color: rgba(0, 229, 255, 0.75);
+    letter-spacing: 0.28em;
+    color: #00e5ff;
     text-transform: uppercase;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: entryTagFade 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
 }
 
 .entry-gate-top-tag .tag-dot {
@@ -120,57 +164,72 @@
     box-shadow: 0 0 8px #00e5ff;
 }
 
+@keyframes entryTagFade {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Primary Cinematic Quote */
 .entry-gate-quote {
-    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 300;
-    font-size: clamp(1.6rem, 4vw, 3.2rem);
-    line-height: 1.35;
+    font-size: clamp(1.65rem, 3.8vw, 3.2rem);
+    line-height: 1.32;
     letter-spacing: 0.18em;
     color: #ffffff;
     text-transform: uppercase;
-    margin: 0 0 24px 0;
-    text-shadow: 0 0 24px rgba(255, 255, 255, 0.25), 0 0 48px rgba(0, 229, 255, 0.15);
+    margin: 0 0 32px 0;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.3), 0 0 48px rgba(0, 229, 255, 0.15);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    opacity: 0;
+    animation: entryQuoteFade 0.9s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .entry-gate-quote .quote-line {
     display: block;
 }
 
-/* Subtitle Section */
-.entry-gate-subtitle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: clamp(0.75rem, 1.5vw, 0.95rem);
-    font-weight: 500;
-    letter-spacing: 0.3em;
-    color: rgba(255, 255, 255, 0.65);
-    text-transform: uppercase;
-    margin-bottom: 44px;
+@keyframes entryQuoteFade {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.entry-gate-subtitle .subtitle-brand {
-    color: #00e5ff;
-    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
-}
-
-.entry-gate-subtitle .subtitle-divider {
-    color: rgba(0, 229, 255, 0.4);
-    font-size: 0.7rem;
-}
-
-/* Enter Button styling */
+/* Enter Button Action */
 .entry-gate-action {
     display: flex;
     justify-content: center;
     align-items: center;
+    opacity: 0;
+    animation: entryBtnFade 0.8s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes entryBtnFade {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .entry-gate-btn {
@@ -179,12 +238,12 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 16px 40px;
+    padding: 16px 42px;
     min-height: 48px;
-    background: rgba(2, 10, 24, 0.65);
-    border: 1px solid rgba(0, 229, 255, 0.35);
-    border-radius: 4px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: rgba(2, 8, 20, 0.75);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    border-radius: 3px;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     letter-spacing: 0.22em;
@@ -193,7 +252,7 @@
     cursor: pointer;
     outline: none;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.08), inset 0 0 15px rgba(0, 229, 255, 0.03);
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.1), inset 0 0 15px rgba(0, 229, 255, 0.04);
 }
 
 .entry-gate-btn .btn-arrow {
@@ -204,10 +263,10 @@
 }
 
 .entry-gate-btn:hover {
-    background: rgba(0, 229, 255, 0.12);
-    border-color: rgba(0, 229, 255, 0.85);
+    background: rgba(0, 229, 255, 0.15);
+    border-color: rgba(0, 229, 255, 0.9);
     color: #ffffff;
-    box-shadow: 0 0 25px rgba(0, 229, 255, 0.3), inset 0 0 20px rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.35), inset 0 0 20px rgba(0, 229, 255, 0.2);
     transform: translateY(-1px);
 }
 
@@ -222,7 +281,7 @@
 
 .entry-gate-btn:active {
     transform: translateY(1px);
-    background: rgba(0, 229, 255, 0.2);
+    background: rgba(0, 229, 255, 0.25);
 }
 
 .entry-gate-btn:disabled {
@@ -231,15 +290,15 @@
     pointer-events: none;
 }
 
-/* Reduced motion support */
+/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-    .entry-gate-content {
+
+    .entry-gate-content,
+    .entry-gate-top-tag,
+    .entry-gate-quote,
+    .entry-gate-action {
         animation: none;
         opacity: 1;
-    }
-
-    .entry-gate-nebula-glow {
-        animation: none;
     }
 
     .cinematic-entry-gate {
@@ -251,37 +310,59 @@
     }
 }
 
-/* Mobile responsive adjustments */
+/* Mobile Responsive Recomposition */
 @media (max-width: 767px) {
     .entry-gate-content {
-        padding: 20px 16px;
+        padding: 24px 16px;
     }
 
     .entry-gate-top-tag {
-        font-size: 0.62rem;
-        letter-spacing: 0.18em;
-        margin-bottom: 20px;
+        font-size: 0.68rem;
+        letter-spacing: 0.2em;
+        margin-bottom: 18px;
     }
 
     .entry-gate-quote {
         font-size: 1.45rem;
         letter-spacing: 0.12em;
         gap: 4px;
-        margin-bottom: 20px;
-    }
-
-    .entry-gate-subtitle {
-        font-size: 0.72rem;
-        letter-spacing: 0.2em;
-        gap: 8px;
-        margin-bottom: 36px;
+        margin-bottom: 28px;
     }
 
     .entry-gate-btn {
         width: 100%;
-        max-width: 280px;
+        max-width: 290px;
         padding: 16px 28px;
         font-size: 0.82rem;
         letter-spacing: 0.18em;
+    }
+
+    /* Reposition ships towards mobile edge boundaries to keep center clear */
+    .entry-ship-01 {
+        top: 6%;
+        left: 2%;
+        width: 110px;
+        opacity: 0.75;
+    }
+
+    .entry-ship-02 {
+        top: 8%;
+        right: 2%;
+        width: 130px;
+        opacity: 0.8;
+    }
+
+    .entry-ship-03 {
+        bottom: 8%;
+        left: 2%;
+        width: 95px;
+        opacity: 0.6;
+    }
+
+    .entry-ship-04 {
+        bottom: 6%;
+        right: 2%;
+        width: 115px;
+        opacity: 0.7;
     }
 }

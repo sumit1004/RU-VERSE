@@ -124,71 +124,19 @@ button {
 }
 
 .hero-logo-img {
-  width: clamp(240px, 45vw, 420px);
+  width: clamp(350px, 55vw, 600px);
   height: auto;
-  filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.4)) drop-shadow(0 0 60px rgba(142, 209, 255, 0.2));
+  /* filter: drop-shadow(0 0 25px rgba(213, 232, 8, 0.496)) drop-shadow(0 0 60px rgba(255, 253, 142, 0.808)); */
   transition: transform 0.4s ease;
 }
 
-.hero-typography-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+.logo {
+  width: clamp(80px, 10vw, 150px);
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.4s ease;
 }
 
-.hero-main-title {
-  font-family: var(--font-display);
-  font-size: clamp(36px, 6vw, 68px);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #ffffff;
-  text-shadow: 0 0 30px rgba(0, 229, 255, 0.5), 0 0 70px rgba(142, 209, 255, 0.25);
-  margin: 0;
-}
-
-.hero-tagline {
-  font-family: var(--font-mono);
-  font-size: clamp(10px, 2vw, 18px);
-  font-weight: 500;
-  letter-spacing: 0.28em;
-  color: var(--accent-cyan);
-  text-transform: uppercase;
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-}
-
-.hero-meta-divider {
-  width: 50px;
-  height: 2px;
-  background: var(--accent-cyan);
-  box-shadow: 0 0 8px var(--accent-cyan);
-  margin: 8px 0;
-}
-
-.hero-event-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: clamp(11px, 1.4vw, 13px);
-  letter-spacing: 0.2em;
-  color: var(--ink-secondary);
-}
-
-.hero-event-date {
-  color: var(--accent-gold);
-  font-weight: 600;
-}
-
-.hero-meta-dot {
-  color: var(--accent-cyan);
-}
-
-.hero-institution {
-  color: var(--ink-secondary);
-}
 
 
 
@@ -610,19 +558,8 @@ button {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
 }
 
-.command-logo {
-  display: flex;
-  align-items: center;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-}
 
-.logo-slash {
-  color: var(--accent-cyan);
-  margin: 0 2px;
-}
+
 
 .logo-sub {
   font-size: 10px;

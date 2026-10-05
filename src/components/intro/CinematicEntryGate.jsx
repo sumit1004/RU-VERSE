@@ -1,195 +1,165 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './CinematicEntryGate.css';
 
-/**
- * Lightweight Starfield for Entry Gate
- */
-function EntryStarField({ count = 1400, reducedMotion = false }) {
-    const pointsRef = useRef();
-
-    const [positions, colors] = useMemo(() => {
-        const pos = new Float32Array(count * 3);
-        const cols = new Float32Array(count * 3);
-        const palette = [
-            new THREE.Color('#ffffff'),
-            new THREE.Color('#99eaff'),
-            new THREE.Color('#b3e5fc'),
-            new THREE.Color('#ffe082'),
-        ];
-
-        for (let i = 0; i < count; i++) {
-            const i3 = i * 3;
-            const r = 8 + Math.random() * 32;
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(2 * Math.random() - 1);
-
-            pos[i3] = r * Math.sin(phi) * Math.cos(theta);
-            pos[i3 + 1] = r * Math.cos(phi);
-            pos[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-
-            const col = palette[Math.floor(Math.random() * palette.length)];
-            cols[i3] = col.r;
-            cols[i3 + 1] = col.g;
-            cols[i3 + 2] = col.b;
-        }
-        return [pos, cols];
-    }, [count]);
-
-    const starTexture = useMemo(() => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        grad.addColorStop(0.2, 'rgba(200, 240, 255, 0.8)');
-        grad.addColorStop(0.5, 'rgba(80, 180, 255, 0.2)');
-        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 64, 64);
-
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.ClampToEdgeWrapping;
-        tex.wrapT = THREE.ClampToEdgeWrapping;
-        return tex;
-    }, []);
-
-    useFrame((state, delta) => {
-        if (reducedMotion || !pointsRef.current) return;
-        pointsRef.current.rotation.y += delta * 0.012;
-        pointsRef.current.rotation.x += delta * 0.006;
-    });
-
-    return (
-        <points ref={pointsRef}>
-            <bufferGeometry>
-                <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-                <bufferAttribute attach="attributes-color" args={[colors, 3]} />
-            </bufferGeometry>
-            <pointsMaterial
-                size={0.18}
-                map={starTexture}
-                sizeAttenuation
-                vertexColors
-                transparent
-                opacity={0.88}
-                blending={THREE.AdditiveBlending}
-                depthWrite={false}
-            />
-        </points>
-    );
-}
+const BACKGROUND_IMAGE = '/models/planets/mainbg.png';
 
 /**
- * Distant Flying Background Ships for Entry Gate
+ * 4 Separate 2D Spaceship Overlays positioned around the viewport edges
+ * Independent scales, opacities, and parallax strengths
  */
-function EntryDistantShips({ reducedMotion = false }) {
-    const groupRef = useRef();
-
-    const [shipGeometry, engineGeometry] = useMemo(() => {
-        const hull = new THREE.ConeGeometry(0.3, 1.2, 4);
-        hull.rotateX(Math.PI / 2);
-        const engine = new THREE.SphereGeometry(0.1, 6, 6);
-        return [hull, engine];
-    }, []);
-
-    const hullMaterial = useMemo(
-        () =>
-            new THREE.MeshBasicMaterial({
-                color: '#1a3045',
-                transparent: true,
-                opacity: 0.5,
-                depthWrite: false,
-            }),
-        []
-    );
-
-    const engineMaterial = useMemo(
-        () =>
-            new THREE.MeshBasicMaterial({
-                color: '#00e5ff',
-                transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-            }),
-        []
-    );
-
-    const shipCount = typeof window !== 'undefined' && window.innerWidth < 768 ? 2 : 4;
-
-    const ships = useMemo(() => {
-        const list = [];
-        for (let i = 0; i < shipCount; i++) {
-            const dir = i % 2 === 0 ? 1 : -1;
-            const startX = (Math.random() * 24 - 12) * dir;
-            const startY = Math.random() * 10 - 5;
-            const startZ = -8 - Math.random() * 8;
-            const speed = (0.5 + Math.random() * 0.5) * dir;
-            const vy = Math.random() * 0.1 - 0.05;
-            const scale = 0.05 + Math.random() * 0.04;
-
-            list.push({
-                pos: [startX, startY, startZ],
-                speed,
-                vy,
-                scale,
-            });
-        }
-        return list;
-    }, [shipCount]);
-
-    useFrame((state, delta) => {
-        if (reducedMotion || !groupRef.current) return;
-
-        groupRef.current.children.forEach((shipGroup, idx) => {
-            const data = ships[idx];
-            if (!data) return;
-
-            shipGroup.position.x += data.speed * delta;
-            shipGroup.position.y += data.vy * delta;
-
-            const angle = Math.atan2(data.vy, data.speed);
-            shipGroup.rotation.z = angle - Math.PI / 2;
-
-            if (data.speed > 0 && shipGroup.position.x > 18) {
-                shipGroup.position.x = -18;
-                shipGroup.position.y = Math.random() * 10 - 5;
-            } else if (data.speed < 0 && shipGroup.position.x < -18) {
-                shipGroup.position.x = 18;
-                shipGroup.position.y = Math.random() * 10 - 5;
-            }
-        });
-    });
-
-    return (
-        <group ref={groupRef}>
-            {ships.map((s, i) => (
-                <group key={i} position={s.pos} scale={s.scale}>
-                    <mesh geometry={shipGeometry} material={hullMaterial} />
-                    <mesh geometry={engineGeometry} material={engineMaterial} position={[0, 0, -0.6]} />
-                </group>
-            ))}
-        </group>
-    );
-}
+const ENTRY_SHIPS = [
+    {
+        id: 'ship-01',
+        src: '/models/planets/one.png',
+        fallbackSrcs: ['/one.png', '/models/planets/one.png', '/ship1.png', '/ship-01.png'],
+        alt: 'Scout Interceptor',
+        className: 'entry-ship-01',
+        strength: 14,
+        idleSpeed: 1.2,
+        idleAmpX: 3,
+        idleAmpY: 4,
+        opacity: 0.88,
+    },
+    {
+        id: 'ship-02',
+        src: '/models/planets/two.png',
+        fallbackSrcs: ['/two.png', '/models/planets/two.png', '/ship2.png', '/ship-02.png'],
+        alt: 'Heavy Dreadnought',
+        className: 'entry-ship-02',
+        strength: 24,
+        idleSpeed: 0.9,
+        idleAmpX: 4,
+        idleAmpY: 5,
+        opacity: 0.95,
+    },
+    {
+        id: 'ship-03',
+        src: '/models/planets/three.png',
+        fallbackSrcs: ['/three.png', '/models/planets/three.png', '/ship3.png', '/ship-03.png'],
+        alt: 'Recon Vessel',
+        className: 'entry-ship-03',
+        strength: 30,
+        idleSpeed: 1.5,
+        idleAmpX: 2,
+        idleAmpY: 3,
+        opacity: 0.68,
+    },
+    {
+        id: 'ship-04',
+        src: '/models/planets/four.png',
+        fallbackSrcs: ['/four.png', '/models/planets/four.png', '/ship4.png', '/ship-04.png'],
+        alt: 'Tactical Frigate',
+        className: 'entry-ship-04',
+        strength: 18,
+        idleSpeed: 1.0,
+        idleAmpX: 3,
+        idleAmpY: 4,
+        opacity: 0.82,
+    },
+];
 
 /**
  * CinematicEntryGate Component:
- * - Deep space entrance screen before the intro video
- * - User gesture gate ("ENTER THE VERSE") enabling audio/video playback
- * - Lightweight self-contained R3F background canvas with distant background ships & starfield
- * - Completely unmounts upon transition to free WebGL memory & loops
+ * - Authoritative background image: /models/planets/mainbg.png
+ * - Four 2D spaceship image overlays around viewport edges (one.png, two.png, three.png, four.png)
+ * - Four 2D spaceship image overlays around viewport edges
+ * - High-performance requestAnimationFrame mouse parallax with smooth lerp (ZERO continuous React re-renders)
+ * - User gesture gate ("ENTER THE VERSE") triggering existing VideoIntro
+ * - Full cleanup of event listeners and rAF loops upon transition
  */
 export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
     const [isExiting, setIsExiting] = useState(false);
     const [hasEntered, setHasEntered] = useState(false);
     const hasClickedRef = useRef(false);
 
-    // Check prefers-reduced-motion
-    const [reducedMotion, setReducedMotion] = useState(false);
+    // Ship DOM Element refs for direct transform updates without triggering React state updates
+    const shipRefs = useRef([]);
+
+    // Normalized mouse coordinates (-1 to 1) with inertia lerp
+    const mouseRef = useRef({ targetX: 0, targetY: 0, currentX: 0, currentY: 0 });
+    const isTouchRef = useRef(false);
+    const animFrameIdRef = useRef(null);
+
+    // Parallax animation loop
+    useEffect(() => {
+        let startTime = performance.now();
+        const reducedMotion =
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        const mobileScale = isMobile ? 0.45 : 1.0;
+
+        const handleMouseMove = (e) => {
+            if (isTouchRef.current) return;
+            const nx = (e.clientX / window.innerWidth) * 2 - 1;
+            const ny = (e.clientY / window.innerHeight) * 2 - 1;
+            mouseRef.current.targetX = Math.max(-1, Math.min(1, nx));
+            mouseRef.current.targetY = Math.max(-1, Math.min(1, ny));
+        };
+
+        const handleTouchStart = () => {
+            isTouchRef.current = true;
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('mousemove', handleMouseMove, { passive: true });
+            window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        }
+
+        const animate = (time) => {
+            const elapsed = (time - startTime) * 0.001;
+
+            // Smooth lerp mouse position (cinematic inertia)
+            const lerpFactor = 0.06;
+            mouseRef.current.currentX +=
+                (mouseRef.current.targetX - mouseRef.current.currentX) * lerpFactor;
+            mouseRef.current.currentY +=
+                (mouseRef.current.targetY - mouseRef.current.currentY) * lerpFactor;
+
+            const mx = mouseRef.current.currentX;
+            const my = mouseRef.current.currentY;
+
+            // Update each ship's CSS transform directly via DOM ref
+            ENTRY_SHIPS.forEach((ship, index) => {
+                const el = shipRefs.current[index];
+                if (!el) return;
+
+                if (reducedMotion) {
+                    el.style.transform = 'translate3d(0, 0, 0)';
+                    return;
+                }
+
+                // Parallax offset
+                const pX = mx * ship.strength * mobileScale;
+                const pY = my * ship.strength * mobileScale;
+
+                // Subtle idle floating motion
+                const idleX = Math.sin(elapsed * ship.idleSpeed + index * 1.5) * ship.idleAmpX;
+                const idleY = Math.cos(elapsed * ship.idleSpeed * 0.8 + index * 1.2) * ship.idleAmpY;
+
+                const totalX = (pX + idleX).toFixed(2);
+                const totalY = (pY + idleY).toFixed(2);
+
+                el.style.transform = `translate3d(${totalX}px, ${totalY}px, 0)`;
+            });
+
+            animFrameIdRef.current = requestAnimationFrame(animate);
+        };
+
+        animFrameIdRef.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animFrameIdRef.current) {
+                cancelAnimationFrame(animFrameIdRef.current);
+            }
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('touchstart', handleTouchStart);
+            }
+        };
+    }, []);
 
     const handleEnterClick = useCallback(() => {
         if (hasClickedRef.current) return;
@@ -197,26 +167,29 @@ export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
         setHasEntered(true);
         setIsExiting(true);
 
+        // Cancel rAF loop immediately on click to free resources
+        if (animFrameIdRef.current) {
+            cancelAnimationFrame(animFrameIdRef.current);
+        }
+
         // 1. Immediately notify parent to mount & play VideoIntro within user gesture context
         if (onStartVideo) {
             onStartVideo();
         }
 
-        // 2. Allow exit animation (500ms) to complete before unmounting entry gate
+        // 2. Allow exit animation (450ms) to complete before unmounting entry gate
         setTimeout(() => {
             if (onExitComplete) {
                 onExitComplete();
             }
-        }, 550);
+        }, 500);
     }, [onStartVideo, onExitComplete]);
 
+    // Global keydown listener for keyboard accessibility
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.matchMedia) {
-            setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-        }
-
         const handleGlobalKeyDown = (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
                 handleEnterClick();
             }
         };
@@ -225,7 +198,7 @@ export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
     }, [handleEnterClick]);
 
-    // Keyboard accessibility (Enter / Space key)
+    // Keyboard accessibility on button
     const handleKeyDown = useCallback(
         (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -236,50 +209,74 @@ export default function CinematicEntryGate({ onStartVideo, onExitComplete }) {
         [handleEnterClick]
     );
 
+    const handleImageError = (e, ship) => {
+        if (ship.fallbackSrcs && ship.fallbackSrcs.length > 0) {
+            const nextSrc = ship.fallbackSrcs.shift();
+            e.target.src = nextSrc;
+        } else {
+            e.target.style.display = 'none';
+        }
+    };
+
     return (
         <div
             className={`cinematic-entry-gate ${isExiting ? 'is-exiting' : ''}`}
             role="region"
             aria-label="RUVERSE 2026 Entry Screen"
         >
-            {/* Background 1: Deep Space Ambient Glow Layers */}
-            <div className="entry-gate-space-bg" />
-            <div className="entry-gate-nebula-glow" />
+            {/* 1. Authoritative Fullscreen Background Image */}
+            <img
+                src={BACKGROUND_IMAGE}
+                alt="Deep Space Background"
+                className="entry-gate-bg-image"
+                loading="eager"
+                onError={(e) => {
+                    // Fallback if /models/planets/mainbg.png fails to resolve
+                    if (!e.target.dataset.fallbackTried) {
+                        e.target.dataset.fallbackTried = '1';
+                        e.target.src = '/mainbg.png';
+                    }
+                }}
+            />
 
-            {/* Background 2: Isolated Lightweight R3F Starfield & Distant Ships */}
-            <div className="entry-gate-canvas-wrapper">
-                <Canvas
-                    camera={{ position: [0, 0, 10], fov: 60 }}
-                    gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
-                    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-                >
-                    <EntryStarField count={1400} reducedMotion={reducedMotion} />
-                    <EntryDistantShips reducedMotion={reducedMotion} />
-                </Canvas>
+            {/* 2. Subtle Vignette & Central Readability Layer */}
+            <div className="entry-gate-vignette" />
+
+            {/* 3. Four 2D Spaceship Overlays with Mouse Parallax */}
+            <div className="entry-gate-ships-layer">
+                {ENTRY_SHIPS.map((ship, index) => (
+                    <div
+                        key={ship.id}
+                        ref={(el) => (shipRefs.current[index] = el)}
+                        className={`entry-ship-container ${ship.className}`}
+                        style={{ opacity: ship.opacity }}
+                    >
+                        <img
+                            src={ship.src}
+                            alt={ship.alt}
+                            className="entry-ship-img"
+                            loading="eager"
+                            onError={(e) => handleImageError(e, ship)}
+                        />
+                    </div>
+                ))}
             </div>
 
-            {/* Foreground Content */}
+            {/* 4. Foreground Central Typography & Action */}
             <div className="entry-gate-content">
-                {/* Subtle decorative top header tag */}
+                {/* Top Tag */}
                 <div className="entry-gate-top-tag">
                     <span className="tag-dot" />
-                    <span>RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
+                    <span>RUVERSE 2026</span>
                 </div>
 
-                {/* Primary Cinematic Quote */}
+                {/* Main Cinematic Line */}
                 <h1 className="entry-gate-quote">
                     <span className="quote-line line-1">THE FUTURE BEGINS</span>
                     <span className="quote-line line-2">WHERE THE UNKNOWN ENDS.</span>
                 </h1>
 
-                {/* Subtitle / Festival Identity */}
-                <div className="entry-gate-subtitle">
-                    <span className="subtitle-brand">RUVERSE 2026</span>
-                    <span className="subtitle-divider">•</span>
-                    <span className="subtitle-meta">TECHNICAL FESTIVAL</span>
-                </div>
-
-                {/* Primary Enter Button */}
+                {/* Primary Interactive Button */}
                 <div className="entry-gate-action">
                     <button
                         type="button"
