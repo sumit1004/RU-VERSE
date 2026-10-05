@@ -61,8 +61,16 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
       {section.id === 'contact' && (
         <div className="hud-contact-box">
           <p className="contact-loc">📍 Rungta International Skills University, Bhilai (C.G.)</p>
-          <p className="contact-channel">TRANSMISSION: {section.email || 'HELLO@RUVERSE.IN'}</p>
-          <p className="contact-phone">HOTLINE: {section.phone || '+91 788 666666'}</p>
+          <p className="contact-channel">TRANSMISSION: <a href={`mailto:${section.email || 'ruverse@rungta.ac.in'}`} className="phone-link">{section.email || 'ruverse@rungta.ac.in'}</a></p>
+          {section.phones ? (
+            section.phones.map((num, idx) => (
+              <p key={idx} className="contact-phone">
+                HOTLINE {idx + 1}: <a href={`tel:${num.replace(/\s+/g, '')}`} className="phone-link">{num}</a>
+              </p>
+            ))
+          ) : (
+            <p className="contact-phone">HOTLINE: <a href={`tel:${(section.phone || '+91 9302787061').replace(/\s+/g, '')}`} className="phone-link">{section.phone || '+91 9302787061'}</a></p>
+          )}
         </div>
       )}
 

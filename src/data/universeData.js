@@ -52,12 +52,16 @@ export const universeSections = [
     entry: 'bottom-left',
     color: '#e6ca8b',
     model: ASSETS.contact,
-    description: 'Rungta International Skills University, Bhilai, Chhattisgarh. Connect with the organizing committee.',
+    // description: 'Rungta International Skills University, Bhilai, Chhattisgarh. Connect with the organizing committee.',
     cta: 'CONNECT WITH US',
     targetAnchor: '#section-contact',
     coordinates: '21.19° N / 89.51° E',
     email: 'ruverse@rungta.ac.in',
-    phone: '+91 9302787061',
-
+    phones: [
+      '+91 9302787061',
+      '+91 9708764172',
+      '+91 8269766043',
+      '+91 9827471852'
+    ]
   }
 ];

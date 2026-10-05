@@ -14,6 +14,53 @@ export default function MainWebsite({ quality }) {
   const [activeSection, setActiveSection] = useState(-1);
   const [sectionProgress, setSectionProgress] = useState(0);
 
+  // Automatic Hero Cinematic Intro
+  const REVEAL_COMPLETE_PROGRESS = 0.65;
+  const reducedMotion = quality?.reducedMotion || false;
+  const [introProgress, setIntroProgress] = useState(0);
+  const [isIntroActive, setIsIntroActive] = useState(!reducedMotion);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setIntroProgress(REVEAL_COMPLETE_PROGRESS);
+      setIsIntroActive(false);
+      return;
+    }
+
+    // Always explicitly start at progress 0 on Hero mount
+    setIntroProgress(0);
+    setIsIntroActive(true);
+
+    let animationFrameId;
+    const duration = 4000; // 5.0s smooth, cinematic flight from top-left to full logo reveal
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const u = Math.min(1, elapsed / duration);
+      // Smooth cubic ease-in-out
+      const eased = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      const currentVal = eased * REVEAL_COMPLETE_PROGRESS;
+
+      setIntroProgress(currentVal);
+
+      if (u < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      } else {
+        setIntroProgress(REVEAL_COMPLETE_PROGRESS);
+        setIsIntroActive(false);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [reducedMotion]);
+
   const handleSectionUpdate = useCallback((index, progress) => {
     setActiveSection(index);
     setSectionProgress(progress);
@@ -33,12 +80,25 @@ export default function MainWebsite({ quality }) {
     }
   };
 
+  // Calculate single shared visual progress for Hero
+  // During intro: strictly uses introProgress (starts at 0.0)
+  // After intro: seamlessly maps scrollProgress (0 -> 1) starting from 0.65 baseline
+  let effectiveHeroProgress;
+  if (isIntroActive) {
+    effectiveHeroProgress = introProgress;
+  } else {
+    effectiveHeroProgress = REVEAL_COMPLETE_PROGRESS + sectionProgress * (1 - REVEAL_COMPLETE_PROGRESS);
+  }
+
+  const canvasProgress = activeSection === -1 ? effectiveHeroProgress : sectionProgress;
+  const heroProgress = activeSection === -1 ? effectiveHeroProgress : (activeSection < -1 ? 0 : 1);
+
   return (
     <div className="main-website-root">
       {/* 1. Single Persistent 3D WebGL Canvas for Planetary Universe & Starfield */}
       <SpaceCanvas
         activeSection={activeSection}
-        sectionProgress={sectionProgress}
+        sectionProgress={canvasProgress}
         isPlanetPhase={true}
         quality={quality}
       />
@@ -77,7 +137,7 @@ export default function MainWebsite({ quality }) {
       <main className="universe-scroll-wrapper">
         <HeroSection
           active={activeSection === -1}
-          progress={activeSection === -1 ? sectionProgress : (activeSection < -1 ? 0 : 1)}
+          progress={heroProgress}
         />
 
         <RUVerseSection

@@ -491,6 +491,17 @@ button {
   margin-top: 4px;
 }
 
+.phone-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.phone-link:hover {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+}
+
 .hud-cta {
   display: inline-flex;
   align-items: center;

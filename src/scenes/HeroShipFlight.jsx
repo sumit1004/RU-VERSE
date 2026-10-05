@@ -89,6 +89,7 @@ export default function HeroShipFlight({
   }, [isMobile, aspect]);
 
   // Inertia tracking vectors (reused per frame to prevent garbage collection)
+  const isInitializedRef = useRef(false);
   const vCurrentPos = useRef(new THREE.Vector3());
   const vTargetPos = useRef(new THREE.Vector3());
   const vTangent = useRef(new THREE.Vector3());
@@ -115,12 +116,17 @@ export default function HeroShipFlight({
     grp.visible = true;
 
     // Smooth scroll progress interpolation
-    const lerpSpeed = reducedMotion ? 1.0 : Math.min(1.0, delta * 12);
-    currentProgressRef.current = THREE.MathUtils.lerp(
-      currentProgressRef.current,
-      rawTargetProgress,
-      lerpSpeed
-    );
+    const isFirstFrame = !isInitializedRef.current;
+    if (isFirstFrame) {
+      currentProgressRef.current = rawTargetProgress;
+    } else {
+      const lerpSpeed = reducedMotion ? 1.0 : Math.min(1.0, delta * 12);
+      currentProgressRef.current = THREE.MathUtils.lerp(
+        currentProgressRef.current,
+        rawTargetProgress,
+        lerpSpeed
+      );
+    }
 
     const p = THREE.MathUtils.clamp(currentProgressRef.current, 0, 0.999);
 
@@ -152,12 +158,21 @@ export default function HeroShipFlight({
       }
     }
 
-    // 4. Smoothly apply transform to 3D object
-    vCurrentPos.current.lerp(vTargetPos.current, 0.18);
-    grp.position.copy(vCurrentPos.current);
-
-    if (orientationRef.current) {
-      orientationRef.current.quaternion.slerp(qTargetRot.current, 0.18);
+    // 4. Apply transform to 3D object
+    if (isFirstFrame) {
+      // First frame: snap directly to start position & orientation with ZERO lerp from (0,0,0)
+      vCurrentPos.current.copy(vTargetPos.current);
+      grp.position.copy(vTargetPos.current);
+      if (orientationRef.current) {
+        orientationRef.current.quaternion.copy(qTargetRot.current);
+      }
+      isInitializedRef.current = true;
+    } else {
+      vCurrentPos.current.lerp(vTargetPos.current, 0.18);
+      grp.position.copy(vCurrentPos.current);
+      if (orientationRef.current) {
+        orientationRef.current.quaternion.slerp(qTargetRot.current, 0.18);
+      }
     }
 
     // 5. Depth scaling
