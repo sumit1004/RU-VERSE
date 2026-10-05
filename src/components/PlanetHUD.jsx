@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function PlanetHUD({ section, active, progress }) {
+export default function PlanetHUD({ section, active, progress, onCtaClick }) {
   // Panel is fully visible when locked in middle (e.g. progress between 0.28 and 0.74)
   const isLocked = active && progress >= 0.28 && progress <= 0.74;
   const isExiting = active && progress > 0.74;
@@ -12,6 +12,10 @@ export default function PlanetHUD({ section, active, progress }) {
 
   const handleCtaClick = (e) => {
     e.preventDefault();
+    if (onCtaClick) {
+      onCtaClick(section);
+      return;
+    }
     if (section.id === 'ru-verse' && window.__navigateToSection) {
       window.__navigateToSection(1);
     } else if (section.id === 'about' && window.__navigateToSection) {

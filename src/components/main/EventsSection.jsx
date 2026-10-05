@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PlanetHUD from '../PlanetHUD';
 import ScrollCue from './ScrollCue';
+import EventsModal from './EventsModal';
 import { universeSections } from '../../data/universeData';
 import { eventsData } from '../../data/eventsData';
 
 export default function EventsSection({ active, progress }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const section = universeSections[2];
   const isVisible = active && progress >= 0.15;
 
@@ -25,6 +27,7 @@ export default function EventsSection({ active, progress }) {
           section={section}
           active={active}
           progress={progress}
+          onCtaClick={() => setIsModalOpen(true)}
         />
 
         {/* In-Section 8-Event Typography Manifest in Empty Space */}
@@ -59,11 +62,15 @@ export default function EventsSection({ active, progress }) {
               ))}
             </div>
           </div>
-
-
         </div>
 
         <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
+
+        {/* Cinematic Events Modal Popup */}
+        <EventsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
     </section>
   );

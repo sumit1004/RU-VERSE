@@ -247,6 +247,11 @@ button {
   pointer-events: none;
 }
 
+.section-events {
+  position: relative;
+  isolation: isolate;
+}
+
 .pinned-content-stage {
   position: absolute;
   inset: 0;
