@@ -56,7 +56,8 @@ export const universeSections = [
     cta: 'CONNECT WITH US',
     targetAnchor: '#section-contact',
     coordinates: '21.19° N / 89.51° E',
-    email: 'HELLO@RUVERSE.IN',
-    phone: '+91 788 666666'
+    email: 'ruverse@rungta.ac.in',
+    phone: '+91 9302787061',
+
   }
 ];
