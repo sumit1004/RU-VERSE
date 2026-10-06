@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RUVERSE 2026 — Interactive Events Database Modal
+   RUVERSE 2026 — Interactive Events Database Modal (Card Grid & Filter HUD)
    ========================================================================== */
 
 .events-modal-overlay {
@@ -19,9 +19,9 @@
 .events-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(1, 4, 10, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(1, 4, 10, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 0;
   pointer-events: auto;
   cursor: pointer;
@@ -37,20 +37,20 @@
   }
 }
 
-/* Modal Box */
+/* Modal Window */
 .events-modal {
   position: relative;
   z-index: 1001;
-  width: min(1100px, calc(100vw - 40px));
-  max-height: min(88vh, 850px);
-  background: rgba(3, 8, 18, 0.95);
+  width: min(1200px, calc(100vw - 40px));
+  height: min(88vh, 880px);
+  background: rgba(3, 8, 18, 0.96);
   border: 1px solid rgba(0, 229, 255, 0.35);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   box-shadow: 
-    0 24px 70px rgba(0, 0, 0, 0.85),
-    0 0 35px rgba(0, 229, 255, 0.12),
+    0 24px 70px rgba(0, 0, 0, 0.9),
+    0 0 40px rgba(0, 229, 255, 0.12),
     inset 0 0 24px rgba(0, 229, 255, 0.04);
   animation: ruverseModalBoxEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
@@ -75,8 +75,8 @@
 /* Corner Technical Brackets on Modal */
 .events-modal .modal-corner {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-color: #00e5ff;
   pointer-events: none;
   z-index: 10;
@@ -111,16 +111,17 @@
 }
 
 /* --------------------------------------------------------------------------
-   Modal Header
+   1. Modal Header
    -------------------------------------------------------------------------- */
 .events-modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 24px 32px 20px 32px;
-  border-bottom: 1px solid rgba(142, 209, 255, 0.15);
-  background: rgba(2, 6, 14, 0.6);
+  padding: 22px 32px 16px 32px;
+  background: rgba(2, 6, 14, 0.75);
+  border-bottom: 1px solid rgba(142, 209, 255, 0.12);
   flex-shrink: 0;
+  gap: 20px;
 }
 
 .modal-header-left {
@@ -133,7 +134,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.24em;
@@ -143,16 +144,16 @@
 }
 
 .modal-tag-dot {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background-color: #00e5ff;
   box-shadow: 0 0 6px #00e5ff;
 }
 
 .events-modal-title {
-  font-family: var(--font-display);
-  font-size: clamp(22px, 3vw, 30px);
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: clamp(20px, 2.4vw, 26px);
   font-weight: 700;
   letter-spacing: 0.14em;
   color: #ffffff;
@@ -162,11 +163,11 @@
 }
 
 .events-modal-subtitle {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 12px;
-  color: var(--ink-secondary);
-  letter-spacing: 0.08em;
-  margin: 4px 0 0 0;
+  color: var(--ink-secondary, #94a3b8);
+  letter-spacing: 0.06em;
+  margin: 2px 0 0 0;
 }
 
 /* Close Button */
@@ -178,7 +179,7 @@
   background: rgba(0, 229, 255, 0.06);
   border: 1px solid rgba(0, 229, 255, 0.35);
   border-radius: 2px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -187,7 +188,7 @@
   cursor: pointer;
   outline: none;
   transition: all 0.2s ease;
-  pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .events-modal-close .close-x {
@@ -209,188 +210,399 @@
 }
 
 /* --------------------------------------------------------------------------
-   Event Content Manifest List
+   2. Modal Controls: Search Bar + Filter Bar
    -------------------------------------------------------------------------- */
-.events-modal-content {
+.events-modal-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(1, 4, 10, 0.88);
+  border-bottom: 1px solid rgba(142, 209, 255, 0.14);
+  padding: 10px 32px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+}
+
+.events-modal-filters-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+}
+
+.events-modal-filters-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+
+.events-modal-filters-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.25);
+  border-radius: 2px;
+}
+
+.events-modal-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.modal-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(142, 209, 255, 0.18);
+  border-radius: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #8ed1ff;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.modal-filter-tab:hover {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #ffffff;
+}
+
+.modal-filter-tab.is-active {
+  background: rgba(0, 229, 255, 0.18);
+  border-color: #00e5ff;
+  color: #00e5ff;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+}
+
+.filter-tab-count {
+  font-size: 9px;
+  padding: 1px 5px;
+  background: rgba(0, 229, 255, 0.12);
+  border-radius: 2px;
+  color: #00e5ff;
+}
+
+.modal-filter-tab.is-active .filter-tab-count {
+  background: #00e5ff;
+  color: #01040a;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   3. Internally Scrollable Body & 3-Column Card Grid
+   -------------------------------------------------------------------------- */
+.events-modal-scroll-body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 12px 32px;
-  display: flex;
-  flex-direction: column;
+  padding: 24px 32px;
 }
 
-/* Custom Scrollbar for Modal */
-.events-modal-content::-webkit-scrollbar {
+/* Custom Scrollbar */
+.events-modal-scroll-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.events-modal-content::-webkit-scrollbar-track {
-  background: rgba(2, 6, 14, 0.6);
+.events-modal-scroll-body::-webkit-scrollbar-track {
+  background: rgba(2, 6, 14, 0.7);
 }
 
-.events-modal-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.3);
+.events-modal-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.35);
   border-radius: 3px;
 }
 
-.events-modal-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.6);
+.events-modal-scroll-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.65);
 }
 
-/* Event Item Row */
-.events-modal-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 18px 16px;
-  border-bottom: 1px solid rgba(142, 209, 255, 0.12);
-  transition: all 0.2s ease;
+/* 3-Column Card Grid */
+.events-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Event Sci-Fi Card */
+.event-card {
   position: relative;
-  border-radius: 2px;
+  background: rgba(5, 13, 28, 0.7);
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  border-radius: 3px;
+  padding: 20px 20px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-.events-modal-row:last-child {
-  border-bottom: none;
-}
-
-.events-modal-row:hover {
-  background: rgba(0, 229, 255, 0.04);
-}
-
-.events-modal-row::before {
+.event-card::before {
   content: '';
   position: absolute;
+  top: 0;
   left: 0;
-  top: 15%;
-  bottom: 15%;
-  width: 2px;
-  background: #00e5ff;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00e5ff, rgba(0, 229, 255, 0));
+  opacity: 0.4;
+  transition: opacity 0.25s ease;
 }
 
-.events-modal-row:hover::before {
+.event-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 229, 255, 0.55);
+  background: rgba(7, 18, 38, 0.85);
+  box-shadow: 
+    0 10px 28px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 229, 255, 0.15);
+}
+
+.event-card:hover::before {
   opacity: 1;
 }
 
-/* Event Left: Index + Content */
-.event-row-left {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex: 1;
+/* Optional Card Media */
+.event-card-media {
+  position: relative;
+  width: calc(100% + 40px);
+  height: 120px;
+  margin: -20px -20px 14px -20px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  background: rgba(2, 6, 14, 0.9);
 }
 
-.event-num {
-  font-family: var(--font-mono);
-  font-size: 16px;
+.event-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.event-card:hover .event-card-img {
+  transform: scale(1.05);
+}
+
+.event-card-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5, 13, 28, 0.95) 0%, rgba(5, 13, 28, 0.2) 60%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Card Decorative Corners */
+.event-card .card-corner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.event-card .card-corner.c-top-l {
+  top: 3px;
+  left: 3px;
+  border-top: 1px solid #00e5ff;
+  border-left: 1px solid #00e5ff;
+}
+
+.event-card .card-corner.c-top-r {
+  top: 3px;
+  right: 3px;
+  border-top: 1px solid #00e5ff;
+  border-right: 1px solid #00e5ff;
+}
+
+/* Card Header */
+.event-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.event-card-num {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #00e5ff;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-  width: 30px;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.35);
   flex-shrink: 0;
 }
 
-.event-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.event-title-wrap {
+.event-card-badges {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
   flex-wrap: wrap;
+  gap: 5px;
 }
 
-.event-row-title {
-  font-family: var(--font-display);
-  font-size: clamp(15px, 1.6vw, 18px);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #ffffff;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.event-category-badge {
-  font-family: var(--font-mono);
-  font-size: 9px;
+.event-card-date-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 8.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold, #f2a65a);
+  background: rgba(242, 166, 90, 0.09);
+  border: 1px solid rgba(242, 166, 90, 0.3);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.event-card-category {
+  font-family: var(--font-mono, monospace);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   color: #8ed1ff;
   background: rgba(142, 209, 255, 0.08);
   border: 1px solid rgba(142, 209, 255, 0.2);
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 2px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.event-row-desc {
-  font-family: var(--font-mono);
+/* Empty State */
+.events-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  border: 1px dashed rgba(142, 209, 255, 0.2);
+  border-radius: 3px;
+  background: rgba(2, 6, 14, 0.4);
+}
+
+.empty-state-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #00e5ff;
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  font-family: var(--font-mono, monospace);
   font-size: 12px;
-  color: #cfd8dc;
-  letter-spacing: 0.04em;
+  color: var(--ink-secondary, #94a3b8);
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
-/* Event Right: Action Button */
-.event-row-right {
+.empty-state-sub {
+  display: inline-block;
+  font-size: 11px;
+  color: #8ed1ff;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* Card Body */
+.event-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.event-card-title {
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
+}
+
+.event-card-tagline {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent-gold, #f2a65a);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.event-card-desc {
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  color: #cbd5e1;
+  letter-spacing: 0.03em;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Card Action Button */
+.event-card-footer {
+  margin-top: auto;
+}
+
+.event-card-btn {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
-}
-
-.event-register-button {
-  display: inline-flex;
-  align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 22px;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.5);
+  width: 100%;
+  padding: 9px 16px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.45);
   border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: #00e5ff;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
   outline: none;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  pointer-events: auto;
+  transition: all 0.22s ease;
+  box-sizing: border-box;
 }
 
-.event-register-button .reg-arrow {
-  font-size: 13px;
-  transition: transform 0.25s ease;
+.event-card-btn .card-btn-arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
 }
 
-.event-register-button:not(.disabled):hover {
+.event-card-btn:not(.disabled):hover {
   background: #00e5ff;
   color: #01040a;
   border-color: #00e5ff;
-  box-shadow: 0 0 16px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.25);
-  transform: translateX(2px);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
 }
 
-.event-register-button:not(.disabled):hover .reg-arrow {
+.event-card-btn:not(.disabled):hover .card-btn-arrow {
   transform: translateX(4px);
 }
 
-.event-register-button:focus-visible {
+.event-card-btn:focus-visible {
   outline: 2px solid #00e5ff;
   outline-offset: 2px;
 }
 
-.event-register-button.disabled {
+.event-card-btn.disabled {
   opacity: 0.45;
   cursor: not-allowed;
   border-color: rgba(142, 209, 255, 0.2);
@@ -400,29 +612,39 @@
 }
 
 /* --------------------------------------------------------------------------
-   Modal Footer
+   4. Modal Footer
    -------------------------------------------------------------------------- */
 .events-modal-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 32px;
-  background: rgba(2, 6, 14, 0.7);
+  padding: 12px 32px;
+  background: rgba(2, 6, 14, 0.85);
   border-top: 1px solid rgba(142, 209, 255, 0.12);
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
   letter-spacing: 0.16em;
-  color: var(--ink-muted);
+  color: var(--ink-muted, #64748b);
   flex-shrink: 0;
 }
 
 .modal-footer-brand {
-  color: var(--accent-gold);
+  color: var(--accent-gold, #f2a65a);
+}
+
+.modal-footer-status {
+  color: #00e5ff;
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Mobile & Tablet Adjustments
+   5. Responsive Breakpoints (Tablet & Mobile)
    -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .events-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 767px) {
   .events-modal-overlay {
     padding: 12px;
@@ -430,16 +652,16 @@
 
   .events-modal {
     width: 100%;
-    max-width: none;
-    max-height: calc(100dvh - 24px);
+    height: calc(100dvh - 24px);
+    max-height: none;
   }
 
   .events-modal-header {
-    padding: 18px 18px 14px 18px;
+    padding: 16px 18px 12px 18px;
   }
 
   .events-modal-title {
-    font-size: 20px;
+    font-size: 19px;
   }
 
   .events-modal-subtitle {
@@ -451,45 +673,36 @@
     font-size: 10px;
   }
 
-  .events-modal-content {
+  .events-modal-controls-bar {
     padding: 8px 16px;
+    gap: 8px;
   }
 
-  .events-modal-row {
-    flex-direction: column;
-    align-items: flex-start;
+  .events-modal-filters-wrapper {
+    padding: 0;
+  }
+
+  .events-modal-scroll-body {
+    padding: 14px 16px;
+  }
+
+  .events-cards-grid {
+    grid-template-columns: 1fr;
     gap: 14px;
-    padding: 16px 8px;
   }
 
-  .event-row-left {
-    gap: 14px;
-    width: 100%;
+  .event-card {
+    min-height: auto;
+    padding: 16px;
   }
 
-  .event-num {
-    font-size: 14px;
-    width: 24px;
+  .event-card-title {
+    font-size: 16px;
   }
 
-  .event-row-title {
-    font-size: 15px;
-  }
-
-  .event-row-desc {
-    font-size: 11.5px;
-  }
-
-  .event-row-right {
-    width: 100%;
-  }
-
-  .event-register-button {
-    width: 100%;
-    justify-content: center;
-    padding: 12px 18px;
-    min-height: 44px;
-    font-size: 11px;
+  .event-card-btn {
+    padding: 11px 16px;
+    min-height: 42px;
   }
 
   .events-modal-footer {
@@ -500,3 +713,4 @@
     text-align: center;
   }
 }
+

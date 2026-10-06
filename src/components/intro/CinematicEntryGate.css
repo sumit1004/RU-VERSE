@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cinematic Entry Gate — RUVERSE 2026 (Visual Reference Composition)
+   Cinematic Entry Gate — RUVERSE 2026
    ========================================================================== */
 
 .cinematic-entry-gate {
@@ -80,7 +80,7 @@
     filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.15));
 }
 
-/* Ship 01: Upper Left (around 8–18% left, 12–28% top) */
+/* Ship 01: Upper Left */
 .entry-ship-01 {
     top: 14%;
     left: 9%;
@@ -88,7 +88,7 @@
     max-height: 200px;
 }
 
-/* Ship 02: Upper Right (around 78–90% left, 15–30% top) */
+/* Ship 02: Upper Right */
 .entry-ship-02 {
     top: 16%;
     right: 8%;
@@ -96,7 +96,7 @@
     max-height: 250px;
 }
 
-/* Ship 03: Lower Left (around 8–22% left, 58–75% top) */
+/* Ship 03: Lower Left */
 .entry-ship-03 {
     bottom: 18%;
     left: 10%;
@@ -104,7 +104,7 @@
     max-height: 160px;
 }
 
-/* Ship 04: Lower Right (around 76–92% left, 58–76% top) */
+/* Ship 04: Lower Right */
 .entry-ship-04 {
     bottom: 16%;
     right: 9%;
@@ -132,51 +132,13 @@
         opacity: 0;
         transform: translateY(12px) scale(0.98);
     }
-
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
 }
 
-/* Top Tag (RUVERSE 2026) */
-.entry-gate-top-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 500;
-    letter-spacing: 0.28em;
-    color: #00e5ff;
-    text-transform: uppercase;
-    margin-bottom: 24px;
-    opacity: 0;
-    animation: entryTagFade 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
-}
-
-.entry-gate-top-tag .tag-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: #00e5ff;
-    box-shadow: 0 0 8px #00e5ff;
-}
-
-@keyframes entryTagFade {
-    0% {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Primary Cinematic Quote */
+/* Primary Cinematic Headline */
 .entry-gate-quote {
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 800;
@@ -186,7 +148,6 @@
     color: #eeee09;
     text-transform: uppercase;
     margin: 0 0 32px 0;
-    /* text-shadow: 0 0 24px rgba(255, 255, 255, 0.3), 0 0 48px rgba(0, 229, 255, 0.15); */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -204,14 +165,13 @@
         opacity: 0;
         transform: translateY(10px);
     }
-
     100% {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* Enter Button Action */
+/* Enter Button Action Area */
 .entry-gate-action {
     display: flex;
     justify-content: center;
@@ -225,44 +185,60 @@
         opacity: 0;
         transform: translateY(10px);
     }
-
     100% {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
+/* --------------------------------------------------------------------------
+   Interactive Box / Box-Fill Loading Bar
+   -------------------------------------------------------------------------- */
 .entry-gate-btn {
     position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 16px 42px;
-    min-height: 48px;
-    background: rgba(2, 8, 20, 0.75);
-    border: 1px solid rgba(0, 229, 255, 0.4);
-    border-radius: 3px;
+    padding: 16px 48px;
+    min-height: 52px;
+    min-width: 290px;
+    background: rgba(2, 8, 20, 0.82);
+    border: 1px solid rgba(0, 229, 255, 0.45);
+    border-radius: 2px;
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.22em;
     color: #ffffff;
     text-transform: uppercase;
     cursor: pointer;
     outline: none;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 18px rgba(0, 229, 255, 0.1), inset 0 0 15px rgba(0, 229, 255, 0.04);
+    box-shadow: 
+        0 0 20px rgba(0, 229, 255, 0.12),
+        inset 0 0 15px rgba(0, 229, 255, 0.04);
+}
+
+.entry-gate-btn .btn-text {
+    position: relative;
+    z-index: 2;
+    transition: color 0.25s ease;
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.5), 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .entry-gate-btn .btn-arrow {
+    position: relative;
+    z-index: 2;
     font-size: 1.1rem;
     line-height: 1;
     color: #00e5ff;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.entry-gate-btn:hover {
+/* Hover State (Before Click) */
+.entry-gate-btn:not(.is-loading):hover {
     background: rgba(0, 229, 255, 0.15);
     border-color: rgba(0, 229, 255, 0.9);
     color: #ffffff;
@@ -270,7 +246,7 @@
     transform: translateY(-1px);
 }
 
-.entry-gate-btn:hover .btn-arrow {
+.entry-gate-btn:not(.is-loading):hover .btn-arrow {
     transform: translateX(5px);
 }
 
@@ -279,22 +255,76 @@
     outline-offset: 4px;
 }
 
-.entry-gate-btn:active {
-    transform: translateY(1px);
-    background: rgba(0, 229, 255, 0.25);
+/* --------------------------------------------------------------------------
+   In-Box Loading State (LOADING THE FUTURE)
+   -------------------------------------------------------------------------- */
+.entry-gate-btn.is-loading {
+    cursor: default;
+    border-color: rgba(0, 229, 255, 0.7);
+    box-shadow: 
+        0 0 30px rgba(0, 229, 255, 0.28),
+        inset 0 0 20px rgba(0, 229, 255, 0.08);
 }
 
-.entry-gate-btn:disabled {
-    opacity: 0.5;
-    cursor: default;
+/* Loading Progress Fill (Expands Left to Right inside Box) */
+.entry-btn-loading-fill {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 229, 255, 0.18) 0%,
+        rgba(0, 229, 255, 0.38) 85%,
+        rgba(0, 229, 255, 0.6) 100%
+    );
+    border-right: 2px solid #00e5ff;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.85);
+    transform-origin: left center;
+    will-change: transform;
     pointer-events: none;
+}
+
+/* Corner Technical Brackets on Box */
+.btn-bracket {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-color: #00e5ff;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.btn-bracket.b-top-l {
+    top: 2px;
+    left: 2px;
+    border-top: 1.5px solid #00e5ff;
+    border-left: 1.5px solid #00e5ff;
+}
+
+.btn-bracket.b-top-r {
+    top: 2px;
+    right: 2px;
+    border-top: 1.5px solid #00e5ff;
+    border-right: 1.5px solid #00e5ff;
+}
+
+.btn-bracket.b-btm-l {
+    bottom: 2px;
+    left: 2px;
+    border-bottom: 1.5px solid #00e5ff;
+    border-left: 1.5px solid #00e5ff;
+}
+
+.btn-bracket.b-btm-r {
+    bottom: 2px;
+    right: 2px;
+    border-bottom: 1.5px solid #00e5ff;
+    border-right: 1.5px solid #00e5ff;
 }
 
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-
     .entry-gate-content,
-    .entry-gate-top-tag,
     .entry-gate-quote,
     .entry-gate-action {
         animation: none;
@@ -310,16 +340,10 @@
     }
 }
 
-/* Mobile Responsive Recomposition */
+/* Mobile Responsive Adjustments */
 @media (max-width: 767px) {
     .entry-gate-content {
         padding: 24px 16px;
-    }
-
-    .entry-gate-top-tag {
-        font-size: 0.68rem;
-        letter-spacing: 0.2em;
-        margin-bottom: 18px;
     }
 
     .entry-gate-quote {
@@ -332,7 +356,8 @@
     .entry-gate-btn {
         width: 100%;
         max-width: 290px;
-        padding: 16px 28px;
+        min-width: 0;
+        padding: 16px 24px;
         font-size: 0.82rem;
         letter-spacing: 0.18em;
     }
