@@ -8,13 +8,11 @@ import React from 'react';
 export default function ScrollCue({ text = 'SCROLL TO NAVIGATE DEEP SPACE', isEnd = false }) {
   return (
     <div className={`scroll-cue ${isEnd ? 'is-end' : ''}`} aria-hidden="true">
-      {/* Sci-Fi Mouse Scroll Indicator Icon */}
-      {!isEnd ? (
+      {/* Sci-Fi Mouse Scroll Indicator Icon (Only rendered when not at terminal end) */}
+      {!isEnd && (
         <div className="scroll-mouse-icon">
           <div className="scroll-mouse-wheel" />
         </div>
-      ) : (
-        <div className="scroll-end-icon">✦</div>
       )}
 
       {/* Primary Indicator Text */}

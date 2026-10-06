@@ -23,14 +23,14 @@ export default function CommandBar({ active = -1, onNavigate }) {
 
   const rightLinks = [
     { id: 'events', label: 'EVENTS', indexStr: '03', target: 2, isActive: active === 2 },
-    { id: 'contact', label: 'CONTACT', indexStr: '04', target: 3, isActive: active === 3 },
+    { id: 'contact', label: 'CONTACT', indexStr: '05', target: 4, isActive: active === 4 },
   ];
 
   const allLinks = [
     { id: 'm-home', label: 'HOME', target: -1, isActive: active === -1 },
     { id: 'm-about', label: 'ABOUT', target: 1, isActive: active === 1 },
     { id: 'm-events', label: 'EVENTS', target: 2, isActive: active === 2 },
-    { id: 'm-contact', label: 'CONTACT', target: 3, isActive: active === 3 },
+    { id: 'm-contact', label: 'CONTACT', target: 4, isActive: active === 4 },
   ];
 
   const isRuVerseActive = active === 0;

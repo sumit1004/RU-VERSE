@@ -1,20 +1,40 @@
 import React from 'react';
 import PlanetHUD from '../PlanetHUD';
-import ScrollCue from './ScrollCue';
 import { universeSections } from '../../data/universeData';
 
 export default function ContactSection({ active, progress }) {
   const section = universeSections[3];
-  const isVisible = active && progress >= 0.15;
+  const isVisible = active && progress >= 0.12;
+
+  // Final centering transition: smoothly begins at 0.38 and finishes centering by 0.85 -> 1.00
+  const centerRaw = Math.max(0, Math.min(1, (progress - 0.38) / 0.46));
+  // Smooth cubic ease-in-out curve
+  const centerEase = centerRaw < 0.5
+    ? 4 * centerRaw * centerRaw * centerRaw
+    : 1 - Math.pow(-2 * centerRaw + 2, 3) / 2;
+
+  const isCentering = active && centerEase > 0.01;
 
   return (
     <section
       id="section-contact"
-      className={`universe-pinned-section section-contact ${active ? 'is-active-section' : ''}`}
+      className={`universe-pinned-section section-contact ${active ? 'is-active-section' : ''} ${isCentering ? 'is-centering' : ''}`}
+      style={{
+        '--center-progress': centerEase.toFixed(3),
+      }}
     >
       <div className="pinned-content-stage">
-        <div className="sector-watermark">04</div>
-        <div className="sector-floating-badge">
+        {/* Sector Watermark & Floating Badge (Fade out as section reaches final centered state) */}
+        <div
+          className="sector-watermark"
+          style={{ opacity: Math.max(0, 0.02 * (1 - centerEase * 1.5)) }}
+        >
+          05
+        </div>
+        <div
+          className="sector-floating-badge"
+          style={{ opacity: Math.max(0, 1 - centerEase * 2) }}
+        >
           <span className="pulse-indicator" />
           <span>CONTACT VECTOR</span>
         </div>
@@ -29,7 +49,10 @@ export default function ContactSection({ active, progress }) {
         {/* In-Section Closing Transmission & Minimal Footer in Empty Space */}
         <div className={`sector-editorial-canvas contact-editorial ${isVisible ? 'visible' : ''}`}>
           <div className="closing-transmission-block">
-            <div className="editorial-kicker">
+            <div
+              className="editorial-kicker"
+              style={{ opacity: Math.max(0, 1 - centerEase * 1.8) }}
+            >
               <span className="kicker-pulse" />
               <span>TRANSMISSION COMPLETE // ALL CHANNELS ACTIVE</span>
             </div>
@@ -43,8 +66,6 @@ export default function ContactSection({ active, progress }) {
               <span className="closing-dot">•</span>
               <span className="closing-univ">RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
             </div>
-
-
           </div>
 
           {/* Minimal in-section footer */}
@@ -57,8 +78,6 @@ export default function ContactSection({ active, progress }) {
             </div>
           </div>
         </div>
-
-        <ScrollCue text="TRANSMISSION COMPLETE" isEnd={true} />
       </div>
     </section>
   );

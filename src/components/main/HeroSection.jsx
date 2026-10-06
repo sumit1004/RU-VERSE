@@ -1,5 +1,4 @@
 import React from 'react';
-import ScrollCue from './ScrollCue';
 
 /**
  * HeroSection Component:
@@ -41,7 +40,7 @@ export default function HeroSection({ active = true, progress = 0 }) {
         <div className="hero-logo-wrapper">
           <div className="hero-logo-reveal-container">
             <img
-              src="/models/planets/techfest_logo.png"
+              src="/models/planets/techfest.png"
               alt="RUVERSE 2026 Logo"
               className="hero-logo-img"
               style={{
@@ -63,9 +62,6 @@ export default function HeroSection({ active = true, progress = 0 }) {
           </div>
         </div>
       </div>
-
-      {/* Persistent Sci-Fi Scroll Cue Indicator */}
-      <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
     </section>
   );
 }

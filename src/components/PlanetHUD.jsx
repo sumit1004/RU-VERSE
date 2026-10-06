@@ -1,14 +1,17 @@
 import React from 'react';
 
 export default function PlanetHUD({ section, active, progress, onCtaClick }) {
-  // Panel is fully visible when locked in middle (e.g. progress between 0.28 and 0.74)
-  const isLocked = active && progress >= 0.28 && progress <= 0.74;
-  const isExiting = active && progress > 0.74;
+  const isContact = section?.id === 'contact';
+  const exitThreshold = isContact ? 0.42 : 0.74;
+
+  // Panel is fully visible when locked in middle
+  const isLocked = active && progress >= 0.25 && progress <= exitThreshold;
+  const isExiting = active && progress > exitThreshold;
 
   let stateClass = 'hidden';
   if (isLocked) stateClass = 'is-locked';
   else if (isExiting) stateClass = 'is-exiting';
-  else if (active && progress < 0.28) stateClass = 'is-entering';
+  else if (active && progress < 0.25) stateClass = 'is-entering';
 
   const handleCtaClick = (e) => {
     e.preventDefault();

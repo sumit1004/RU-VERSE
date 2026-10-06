@@ -5,7 +5,9 @@ import HeroSection from './HeroSection';
 import RUVerseSection from './RUVerseSection';
 import AboutSection from './AboutSection';
 import EventsSection from './EventsSection';
+import SponsorsSection from './SponsorsSection';
 import ContactSection from './ContactSection';
+import ScrollCue from './ScrollCue';
 import CommandBar from '../CommandBar/CommandBar';
 import ShipCalibrationPanel from '../debug/ShipCalibrationPanel';
 import ScreenTargetOverlay from '../debug/ScreenTargetOverlay';
@@ -61,32 +63,6 @@ export default function MainWebsite({ quality }) {
     };
   }, [reducedMotion]);
 
-  const [navigationTarget, setNavigationTarget] = useState(null);
-
-  // Clear programmatic navigation target once user initiates manual scroll or upon timeout
-  useEffect(() => {
-    if (navigationTarget === null) return;
-
-    const clearNavTarget = () => {
-      setNavigationTarget(null);
-    };
-
-    window.addEventListener('wheel', clearNavTarget, { passive: true });
-    window.addEventListener('touchmove', clearNavTarget, { passive: true });
-    window.addEventListener('keydown', clearNavTarget, { passive: true });
-
-    const timer = setTimeout(() => {
-      setNavigationTarget(null);
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('wheel', clearNavTarget);
-      window.removeEventListener('touchmove', clearNavTarget);
-      window.removeEventListener('keydown', clearNavTarget);
-      clearTimeout(timer);
-    };
-  }, [navigationTarget]);
-
   const handleSectionUpdate = useCallback((index, progress) => {
     setActiveSection(index);
     setSectionProgress(progress);
@@ -101,7 +77,6 @@ export default function MainWebsite({ quality }) {
   }, [handleSectionUpdate]);
 
   const handleNavigate = (index) => {
-    setNavigationTarget(index);
     if (window.__navigateToSection) {
       window.__navigateToSection(index);
     }
@@ -117,34 +92,14 @@ export default function MainWebsite({ quality }) {
     effectiveHeroProgress = REVEAL_COMPLETE_PROGRESS + sectionProgress * (1 - REVEAL_COMPLETE_PROGRESS);
   }
 
-  const isNavigating = navigationTarget !== null;
-  const effectiveActiveSection = isNavigating ? navigationTarget : activeSection;
-
-  const isSectorActive = (secIdx) => {
-    if (isNavigating) return navigationTarget === secIdx;
-    return activeSection === secIdx;
-  };
-
-  const getSectorProgress = (secIdx) => {
-    if (isNavigating && navigationTarget === secIdx) {
-      return Math.max(sectionProgress, 0.50);
-    }
-    return activeSection === secIdx ? sectionProgress : 0;
-  };
-
-  const heroProgress = (isNavigating && navigationTarget === -1)
-    ? 1
-    : (activeSection === -1 ? effectiveHeroProgress : (activeSection < -1 ? 0 : 1));
-
-  const canvasProgress = effectiveActiveSection === -1
-    ? (heroProgress >= 1 ? 1 : effectiveHeroProgress)
-    : getSectorProgress(effectiveActiveSection);
+  const canvasProgress = activeSection === -1 ? effectiveHeroProgress : sectionProgress;
+  const heroProgress = activeSection === -1 ? effectiveHeroProgress : (activeSection < -1 ? 0 : 1);
 
   return (
     <div className="main-website-root">
       {/* 1. Single Persistent 3D WebGL Canvas for Planetary Universe & Starfield */}
       <SpaceCanvas
-        activeSection={effectiveActiveSection}
+        activeSection={activeSection}
         sectionProgress={canvasProgress}
         isPlanetPhase={true}
         quality={quality}
@@ -183,34 +138,45 @@ export default function MainWebsite({ quality }) {
       */}
       <main className="universe-scroll-wrapper">
         <HeroSection
-          active={isSectorActive(-1)}
+          active={activeSection === -1}
           progress={heroProgress}
         />
 
         <RUVerseSection
-          active={isSectorActive(0)}
-          progress={getSectorProgress(0)}
+          active={activeSection === 0}
+          progress={activeSection === 0 ? sectionProgress : 0}
         />
 
         <AboutSection
-          active={isSectorActive(1)}
-          progress={getSectorProgress(1)}
+          active={activeSection === 1}
+          progress={activeSection === 1 ? sectionProgress : 0}
         />
 
         <EventsSection
-          active={isSectorActive(2)}
-          progress={getSectorProgress(2)}
+          active={activeSection === 2}
+          progress={activeSection === 2 ? sectionProgress : 0}
+        />
+
+        <SponsorsSection
+          active={activeSection === 3}
+          progress={activeSection === 3 ? sectionProgress : 0}
         />
 
         <ContactSection
-          active={isSectorActive(3)}
-          progress={getSectorProgress(3)}
+          active={activeSection === 4}
+          progress={activeSection === 4 ? sectionProgress : 0}
         />
       </main>
 
-      {/* 4. Fixed Futuristic Command Navigation Bar */}
+      {/* 4. Single Viewport-Anchored Fixed Scroll Indicator (0px layout contribution) */}
+      <ScrollCue
+        text={activeSection === 4 ? 'TRANSMISSION COMPLETE' : 'SCROLL TO NAVIGATE DEEP SPACE'}
+        isEnd={activeSection === 4}
+      />
+
+      {/* 5. Fixed Futuristic Command Navigation Bar */}
       <CommandBar
-        active={effectiveActiveSection}
+        active={activeSection}
         onNavigate={handleNavigate}
         mobile={quality?.mobile || false}
       />

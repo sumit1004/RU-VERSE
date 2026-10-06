@@ -61,10 +61,11 @@ export default function PlanetaryUniverse({
       const entryPos = baseFocusWorld.clone().add(entryOffset);
       const exitPos = baseFocusWorld.clone().add(exitOffset);
 
-      // Check current section state
-      const isCurrent = (calibrationEnabled && activeSectionKey === secKey) || activeSection === idx;
-      const isPast = activeSection > idx && !calibrationEnabled;
-      const isFuture = activeSection < idx && !calibrationEnabled;
+      // Check current section state (Contact is index 4 since Sponsors is 2D section index 3)
+      const targetSectionIdx = sec.id === 'contact' ? 4 : idx;
+      const isCurrent = (calibrationEnabled && activeSectionKey === secKey) || activeSection === targetSectionIdx;
+      const isPast = activeSection > targetSectionIdx && !calibrationEnabled;
+      const isFuture = activeSection < targetSectionIdx && !calibrationEnabled;
 
       let targetPos = new THREE.Vector3();
       let targetScale = 0;
@@ -91,22 +92,26 @@ export default function PlanetaryUniverse({
           targetScale = 0.001;
         }
       } else if (isCurrent) {
-        if (sectionProgress < 0.35) {
+        const isContactSec = sec.id === 'contact';
+        const focusEnd = isContactSec ? 0.40 : 0.65;
+        const exitSpan = isContactSec ? 0.40 : 0.35;
+
+        if (sectionProgress < 0.30) {
           // Entering phase: from entry corner into focus
-          const t = Math.max(0, sectionProgress / 0.35);
+          const t = Math.max(0, sectionProgress / 0.30);
           const eased = t * t * (3 - 2 * t);
           targetPos.lerpVectors(entryPos, baseFocusWorld, eased);
           targetScale = THREE.MathUtils.lerp(0.3, config.scale, eased);
-        } else if (sectionProgress <= 0.65) {
+        } else if (sectionProgress <= focusEnd) {
           // Locked in focus: exactly at base calibrated screen position
           targetPos.copy(baseFocusWorld);
           targetScale = config.scale;
         } else {
           // Exiting phase: from focus towards exit corner
-          const t = (sectionProgress - 0.65) / 0.35;
+          const t = Math.min(1, Math.max(0, (sectionProgress - focusEnd) / exitSpan));
           const eased = t * t * (3 - 2 * t);
           targetPos.lerpVectors(baseFocusWorld, exitPos, eased);
-          targetScale = THREE.MathUtils.lerp(config.scale, 0.2, eased);
+          targetScale = THREE.MathUtils.lerp(config.scale, 0.001, eased);
         }
       } else if (isPast) {
         targetPos.copy(exitPos);

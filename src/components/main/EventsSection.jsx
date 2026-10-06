@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PlanetHUD from '../PlanetHUD';
-import ScrollCue from './ScrollCue';
 import EventsModal from './EventsModal';
 import { universeSections } from '../../data/universeData';
 import { eventsData } from '../../data/eventsData';
@@ -63,8 +62,6 @@ export default function EventsSection({ active, progress }) {
             </div>
           </div>
         </div>
-
-        <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
 
         {/* Cinematic Events Modal Popup */}
         <EventsModal

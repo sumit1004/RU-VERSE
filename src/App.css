@@ -536,21 +536,22 @@ button {
 }
 
 /* ==========================================================================
-   High-Visibility Sci-Fi Scroll Navigation Cue
+   High-Visibility Sci-Fi Scroll Navigation Cue (Positioned above Command Bar)
    ========================================================================== */
 .scroll-cue {
-  position: absolute;
-  bottom: 11vh;
+  position: fixed;
+  bottom: clamp(88px, 12vh, 104px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-family: var(--font-mono);
   pointer-events: none;
   z-index: 15;
   user-select: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 /* Sci-Fi Mouse Scroll Indicator */
@@ -932,32 +933,58 @@ button {
 }
 
 /* ==========================================================================
-   Sector 04: Contact In-Section Closing Transmission & Minimal Footer
+   Sector 05: Contact In-Section Closing Transmission & Minimal Footer
    ========================================================================== */
 .contact-editorial {
   top: 18vh;
   left: 6vw;
-  max-width: min(580px, 48vw);
+  width: min(580px, 48vw);
+  max-width: 960px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: calc(100vh - 30vh);
+  height: calc(100vh - 28vh);
+  z-index: 12;
+  transition: width 0.3s ease;
+}
+
+.section-contact.is-centering .contact-editorial {
+  width: min(920px, 88vw);
 }
 
 .closing-transmission-block {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* GPU-accelerated smooth interpolation toward viewport center */
+  transform: translate(
+    calc(var(--center-progress, 0) * (50vw - 6vw - 50%)),
+    calc(var(--center-progress, 0) * 16vh)
+  );
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+}
+
+.section-contact.is-centering .closing-transmission-block {
+  align-items: center;
+  text-align: center;
 }
 
 .closing-headline {
   font-family: var(--font-display);
-  font-size: clamp(28px, 4vw, 46px);
+  font-size: clamp(28px, 4vw, 48px);
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #ffffff;
   text-shadow: 0 0 35px rgba(0, 229, 255, 0.4);
   line-height: 1.05;
+  transition: font-size 0.3s ease, letter-spacing 0.3s ease, text-shadow 0.3s ease;
+}
+
+.section-contact.is-centering .closing-headline {
+  font-size: clamp(34px, 4.8vw, 56px);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 45px rgba(0, 229, 255, 0.6), 0 0 90px rgba(0, 229, 255, 0.3);
 }
 
 .closing-event-identity {
@@ -969,6 +996,13 @@ button {
   font-size: clamp(11px, 1.1vw, 13px);
   letter-spacing: 0.14em;
   color: var(--ink-secondary);
+  transition: justify-content 0.3s ease, font-size 0.3s ease, letter-spacing 0.3s ease;
+}
+
+.section-contact.is-centering .closing-event-identity {
+  justify-content: center;
+  font-size: clamp(12px, 1.25vw, 15px);
+  letter-spacing: 0.18em;
 }
 
 .closing-brand {

@@ -1,6 +1,5 @@
 import React from 'react';
 import PlanetHUD from '../PlanetHUD';
-import ScrollCue from './ScrollCue';
 import { universeSections } from '../../data/universeData';
 
 export default function RUVerseSection({ active, progress }) {
@@ -21,7 +20,6 @@ export default function RUVerseSection({ active, progress }) {
           active={active}
           progress={progress}
         />
-        <ScrollCue text="SCROLL TO NAVIGATE DEEP SPACE" />
       </div>
     </section>
   );

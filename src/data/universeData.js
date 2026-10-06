@@ -41,7 +41,7 @@ export const universeSections = [
     model: ASSETS.events,
     description: 'From code and hardware to gaming, innovation and everything in between, RUVERSE has something for every kind of tech enthusiast. Explore the arenas below.',
     cta: 'EXPLORE EVENTS',
-    targetAnchor: '#section-contact',
+    targetAnchor: '#section-sponsors',
     coordinates: '06.73° S / 114.19° W'
   },
   {
