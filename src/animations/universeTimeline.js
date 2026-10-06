@@ -81,20 +81,23 @@ export function createUniverseTimeline({ onSectionUpdate }) {
 
   // Global smooth navigation helper
   window.__navigateToSection = (targetIndex) => {
+    ScrollTrigger.refresh();
     if (targetIndex === -1) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    if (targetIndex < 0 || targetIndex >= sections.length) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     // Planet section triggers start after hero trigger if present
     const planetTriggers = triggers.filter(t => t.trigger !== heroEl);
+    if (targetIndex < 0 || targetIndex >= planetTriggers.length) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const targetTrigger = planetTriggers[targetIndex];
     if (targetTrigger) {
+      // Land at 50% midpoint of the pinned sector where HUD is locked, planet is centered, and editorial is visible
+      const targetScroll = targetTrigger.start + (targetTrigger.end - targetTrigger.start) * 0.50;
       window.scrollTo({
-        top: targetTrigger.start + 10,
+        top: Math.round(targetScroll),
         behavior: 'smooth'
       });
     }

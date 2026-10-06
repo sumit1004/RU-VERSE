@@ -61,6 +61,32 @@ export default function MainWebsite({ quality }) {
     };
   }, [reducedMotion]);
 
+  const [navigationTarget, setNavigationTarget] = useState(null);
+
+  // Clear programmatic navigation target once user initiates manual scroll or upon timeout
+  useEffect(() => {
+    if (navigationTarget === null) return;
+
+    const clearNavTarget = () => {
+      setNavigationTarget(null);
+    };
+
+    window.addEventListener('wheel', clearNavTarget, { passive: true });
+    window.addEventListener('touchmove', clearNavTarget, { passive: true });
+    window.addEventListener('keydown', clearNavTarget, { passive: true });
+
+    const timer = setTimeout(() => {
+      setNavigationTarget(null);
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('wheel', clearNavTarget);
+      window.removeEventListener('touchmove', clearNavTarget);
+      window.removeEventListener('keydown', clearNavTarget);
+      clearTimeout(timer);
+    };
+  }, [navigationTarget]);
+
   const handleSectionUpdate = useCallback((index, progress) => {
     setActiveSection(index);
     setSectionProgress(progress);
@@ -75,6 +101,7 @@ export default function MainWebsite({ quality }) {
   }, [handleSectionUpdate]);
 
   const handleNavigate = (index) => {
+    setNavigationTarget(index);
     if (window.__navigateToSection) {
       window.__navigateToSection(index);
     }
@@ -90,14 +117,34 @@ export default function MainWebsite({ quality }) {
     effectiveHeroProgress = REVEAL_COMPLETE_PROGRESS + sectionProgress * (1 - REVEAL_COMPLETE_PROGRESS);
   }
 
-  const canvasProgress = activeSection === -1 ? effectiveHeroProgress : sectionProgress;
-  const heroProgress = activeSection === -1 ? effectiveHeroProgress : (activeSection < -1 ? 0 : 1);
+  const isNavigating = navigationTarget !== null;
+  const effectiveActiveSection = isNavigating ? navigationTarget : activeSection;
+
+  const isSectorActive = (secIdx) => {
+    if (isNavigating) return navigationTarget === secIdx;
+    return activeSection === secIdx;
+  };
+
+  const getSectorProgress = (secIdx) => {
+    if (isNavigating && navigationTarget === secIdx) {
+      return Math.max(sectionProgress, 0.50);
+    }
+    return activeSection === secIdx ? sectionProgress : 0;
+  };
+
+  const heroProgress = (isNavigating && navigationTarget === -1)
+    ? 1
+    : (activeSection === -1 ? effectiveHeroProgress : (activeSection < -1 ? 0 : 1));
+
+  const canvasProgress = effectiveActiveSection === -1
+    ? (heroProgress >= 1 ? 1 : effectiveHeroProgress)
+    : getSectorProgress(effectiveActiveSection);
 
   return (
     <div className="main-website-root">
       {/* 1. Single Persistent 3D WebGL Canvas for Planetary Universe & Starfield */}
       <SpaceCanvas
-        activeSection={activeSection}
+        activeSection={effectiveActiveSection}
         sectionProgress={canvasProgress}
         isPlanetPhase={true}
         quality={quality}
@@ -136,34 +183,34 @@ export default function MainWebsite({ quality }) {
       */}
       <main className="universe-scroll-wrapper">
         <HeroSection
-          active={activeSection === -1}
+          active={isSectorActive(-1)}
           progress={heroProgress}
         />
 
         <RUVerseSection
-          active={activeSection === 0}
-          progress={activeSection === 0 ? sectionProgress : 0}
+          active={isSectorActive(0)}
+          progress={getSectorProgress(0)}
         />
 
         <AboutSection
-          active={activeSection === 1}
-          progress={activeSection === 1 ? sectionProgress : 0}
+          active={isSectorActive(1)}
+          progress={getSectorProgress(1)}
         />
 
         <EventsSection
-          active={activeSection === 2}
-          progress={activeSection === 2 ? sectionProgress : 0}
+          active={isSectorActive(2)}
+          progress={getSectorProgress(2)}
         />
 
         <ContactSection
-          active={activeSection === 3}
-          progress={activeSection === 3 ? sectionProgress : 0}
+          active={isSectorActive(3)}
+          progress={getSectorProgress(3)}
         />
       </main>
 
       {/* 4. Fixed Futuristic Command Navigation Bar */}
       <CommandBar
-        active={activeSection}
+        active={effectiveActiveSection}
         onNavigate={handleNavigate}
         mobile={quality?.mobile || false}
       />
