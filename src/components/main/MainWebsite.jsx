@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createUniverseTimeline } from '../../animations/universeTimeline';
 import SpaceCanvas from '../../scenes/SpaceCanvas';
 import HeroSection from './HeroSection';
@@ -13,28 +14,32 @@ import ShipCalibrationPanel from '../debug/ShipCalibrationPanel';
 import ScreenTargetOverlay from '../debug/ScreenTargetOverlay';
 
 export default function MainWebsite({ quality }) {
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState(-1);
   const [sectionProgress, setSectionProgress] = useState(0);
+
+  // Determine if returning from an event detail / registration page
+  const isReturningFromDetail = !!(location.state?.fromPublicDetail || location.state?.targetSection);
 
   // Automatic Hero Cinematic Intro
   const REVEAL_COMPLETE_PROGRESS = 0.65;
   const reducedMotion = quality?.reducedMotion || false;
-  const [introProgress, setIntroProgress] = useState(0);
-  const [isIntroActive, setIsIntroActive] = useState(!reducedMotion);
+  const [introProgress, setIntroProgress] = useState(isReturningFromDetail ? REVEAL_COMPLETE_PROGRESS : 0);
+  const [isIntroActive, setIsIntroActive] = useState(!reducedMotion && !isReturningFromDetail);
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || isReturningFromDetail) {
       setIntroProgress(REVEAL_COMPLETE_PROGRESS);
       setIsIntroActive(false);
       return;
     }
 
-    // Always explicitly start at progress 0 on Hero mount
+    // Always explicitly start at progress 0 on fresh Hero mount
     setIntroProgress(0);
     setIsIntroActive(true);
 
     let animationFrameId;
-    const duration = 4000; // 5.0s smooth, cinematic flight from top-left to full logo reveal
+    const duration = 4000; // 4.0s smooth, cinematic flight from top-left to full logo reveal
     const startTime = performance.now();
 
     const animate = (currentTime) => {
@@ -61,7 +66,7 @@ export default function MainWebsite({ quality }) {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, isReturningFromDetail]);
 
   const handleSectionUpdate = useCallback((index, progress) => {
     setActiveSection(index);
@@ -73,8 +78,22 @@ export default function MainWebsite({ quality }) {
     const cleanup = createUniverseTimeline({
       onSectionUpdate: handleSectionUpdate,
     });
+
+    // If navigated with targetSection 'events' or hash #events, scroll smoothly to events
+    if (location.state?.targetSection === 'events' || window.location.hash === '#events') {
+      const timer = setTimeout(() => {
+        if (window.__navigateToSection) {
+          window.__navigateToSection(2); // Index 2 = Events Vector
+        }
+      }, 150);
+      return () => {
+        clearTimeout(timer);
+        cleanup();
+      };
+    }
+
     return () => cleanup();
-  }, [handleSectionUpdate]);
+  }, [handleSectionUpdate, location.state]);
 
   const handleNavigate = (index) => {
     if (window.__navigateToSection) {

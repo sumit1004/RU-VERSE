@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { eventService } from '../../services/eventService';
 import { categoryService } from '../../services/categoryService';
+import Toast from '../../components/admin/Toast';
 import '../../styles/admin.css';
 
 export default function AdminEventCreate() {
@@ -9,8 +10,7 @@ export default function AdminEventCreate() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [toast, setToast] = useState(null);
 
   // Form Fields State
   const [title, setTitle] = useState('');
@@ -19,7 +19,7 @@ export default function AdminEventCreate() {
   const [categoryId, setCategoryId] = useState('');
   const [venue, setVenue] = useState('');
 
-  // Schedules (ISO-compatible local datetime strings)
+  // Schedules
   const [startDateTime, setStartDateTime] = useState('');
   const [endDateTime, setEndDateTime] = useState('');
   const [registrationStart, setRegistrationStart] = useState('');
@@ -35,21 +35,25 @@ export default function AdminEventCreate() {
   const [displayOrder, setDisplayOrder] = useState(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isOpenForAll, setIsOpenForAll] = useState(true);
-  const [isActive, setIsActive] = useState(true);
   const [isPublished, setIsPublished] = useState(false);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     async function loadCategories() {
       try {
         setLoading(true);
-        // Load active public categories
-        const cats = await categoryService.getPublicCategories();
-        setCategories(cats);
-        if (cats.length > 0) {
-          setCategoryId(cats[0].id);
+        const cats = await categoryService.getAdminCategories();
+        const list = Array.isArray(cats) ? cats : [];
+        setCategories(list);
+        if (list.length > 0) {
+          setCategoryId(list[0].id);
         }
       } catch (err) {
-        setErrorMessage(err.message || 'Failed to load categories.');
+        showToast('error', 'Failed to load categories.');
       } finally {
         setLoading(false);
       }
@@ -57,24 +61,27 @@ export default function AdminEventCreate() {
     loadCategories();
   }, []);
 
-  const handleSubmit = async (e, shouldPublish = false) => {
+  const handleSubmit = async (e, publishStatus = false) => {
     e.preventDefault();
-    setErrorMessage('');
-    setFieldErrors({});
 
-    const errors = {};
-    if (!title.trim()) errors.title = 'Event title is required.';
-    if (!description.trim()) errors.description = 'Event description is required.';
-    if (!categoryId) errors.categoryId = 'Category selection is required.';
-    if (!venue.trim()) errors.venue = 'Venue location is required.';
-    if (!startDateTime) errors.startDateTime = 'Event start date/time is required.';
-    if (!endDateTime) errors.endDateTime = 'Event end date/time is required.';
-    if (!registrationStart) errors.registrationStart = 'Registration start date/time is required.';
-    if (!registrationEnd) errors.registrationEnd = 'Registration end date/time is required.';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setErrorMessage('Please fix the highlighted errors before saving.');
+    if (!title.trim()) {
+      showToast('error', 'Event title is required.');
+      return;
+    }
+    if (!description.trim()) {
+      showToast('error', 'Event description is required.');
+      return;
+    }
+    if (!categoryId) {
+      showToast('error', 'Please select a category.');
+      return;
+    }
+    if (!venue.trim()) {
+      showToast('error', 'Venue location is required.');
+      return;
+    }
+    if (!startDateTime) {
+      showToast('error', 'Event start date/time is required.');
       return;
     }
 
@@ -82,387 +89,302 @@ export default function AdminEventCreate() {
       setIsSubmitting(true);
       const payload = {
         title: title.trim(),
-        shortDescription: shortDescription.trim() || null,
+        shortDescription: shortDescription.trim() || undefined,
         description: description.trim(),
-        categoryId: parseInt(categoryId, 10),
+        categoryId: Number(categoryId),
         venue: venue.trim(),
         startDateTime: new Date(startDateTime).toISOString(),
-        endDateTime: new Date(endDateTime).toISOString(),
-        registrationStart: new Date(registrationStart).toISOString(),
-        registrationEnd: new Date(registrationEnd).toISOString(),
+        endDateTime: endDateTime ? new Date(endDateTime).toISOString() : undefined,
+        registrationStart: registrationStart ? new Date(registrationStart).toISOString() : undefined,
+        registrationEnd: registrationEnd ? new Date(registrationEnd).toISOString() : undefined,
         registrationType,
-        teamMinSize: (registrationType === 'TEAM' || registrationType === 'BOTH') ? parseInt(teamMinSize, 10) : null,
-        teamMaxSize: (registrationType === 'TEAM' || registrationType === 'BOTH') ? parseInt(teamMaxSize, 10) : null,
-        registrationLimit: registrationLimit ? parseInt(registrationLimit, 10) : null,
-        displayOrder: parseInt(displayOrder, 10) || 0,
+        teamMinSize: registrationType === 'TEAM' ? Number(teamMinSize) : null,
+        teamMaxSize: registrationType === 'TEAM' ? Number(teamMaxSize) : null,
+        registrationLimit: registrationLimit ? Number(registrationLimit) : null,
+        displayOrder: Number(displayOrder) || 0,
         isFeatured,
         isOpenForAll,
-        isActive,
-        isPublished: shouldPublish || isPublished,
+        isActive: true,
+        isPublished: publishStatus,
       };
 
-      const event = await eventService.createEvent(payload);
-      navigate(`/admin/events/${event.id}`, { replace: true });
+      const res = await eventService.createEvent(payload);
+      showToast('success', `Event "${res.title}" created successfully.`);
+      setTimeout(() => {
+        navigate(`/admin/events/${res.id}`);
+      }, 800);
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to create event.');
-      if (err.errors) {
-        setFieldErrors(err.errors);
-      }
+      showToast('error', err.message || 'Failed to create event.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ maxWidth: '840px' }}>
+      <Toast toast={toast} />
+
+      {/* Page Header */}
+      <div className="admin-page-header">
         <div>
-          <Link to="/admin/events" style={{ color: '#818cf8', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-block', marginBottom: '0.5rem' }}>
-            ← Back to Events
-          </Link>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#fff', margin: 0 }}>
-            Create New Event
+          <div style={{ marginBottom: '0.35rem' }}>
+            <Link to="/admin/events" style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', textDecoration: 'none' }}>
+              ← Back to Events
+            </Link>
+          </div>
+          <h1 className="admin-page-title">
+            Create Event
           </h1>
+          <p className="admin-page-subtitle">
+            Configure festival arena rules, competition team bounds, schedules, and live publishing parameters.
+          </p>
         </div>
       </div>
 
-      {errorMessage && (
-        <div className="admin-alert admin-alert-danger">
-          {errorMessage}
-        </div>
-      )}
-
-      <form onSubmit={(e) => handleSubmit(e, false)}>
-        {/* 1. Basic Information */}
+      <form onSubmit={(e) => handleSubmit(e, isPublished)}>
+        {/* Section 1: Basic Information */}
         <div className="admin-form-section">
-          <h2 className="admin-form-section-title">1. Basic Information</h2>
+          <h3 className="admin-form-section-title">1. Event Details</h3>
+          <p className="admin-form-section-desc">Primary event identity, category assignment, and venue.</p>
 
-          <div className="admin-form-group">
-            <label className="admin-form-label" htmlFor="ev-title">
-              Event Title *
-            </label>
-            <input
-              id="ev-title"
-              type="text"
-              className="admin-form-input"
-              placeholder="e.g. Starship Combat Robotics, AI Hackathon 2026"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-            {fieldErrors.title && <div className="admin-form-error">{fieldErrors.title}</div>}
-          </div>
+          <div className="admin-form-grid-2">
+            <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="admin-label">Event Title *</label>
+              <input
+                type="text"
+                className="admin-input"
+                placeholder="e.g. AI Autonomous Hackathon 2026"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
 
-          <div className="admin-grid-2">
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="ev-cat">
-                Category *
-              </label>
+              <label className="admin-label">Category *</label>
               <select
-                id="ev-cat"
-                className="admin-form-select"
+                className="admin-select"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 required
               >
-                {loading && <option value="">Loading categories...</option>}
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
               </select>
-              {fieldErrors.categoryId && <div className="admin-form-error">{fieldErrors.categoryId}</div>}
             </div>
 
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="ev-venue">
-                Venue / Stage *
-              </label>
+              <label className="admin-label">Venue Location *</label>
               <input
-                id="ev-venue"
                 type="text"
-                className="admin-form-input"
-                placeholder="e.g. Main Arena, Cosmic Lab 3, Auditorium"
+                className="admin-input"
+                placeholder="e.g. Main Auditorium / Tech Arena Alpha"
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}
                 required
               />
-              {fieldErrors.venue && <div className="admin-form-error">{fieldErrors.venue}</div>}
             </div>
-          </div>
 
-          <div className="admin-form-group">
-            <label className="admin-form-label" htmlFor="ev-shortdesc">
-              Short Description (Catchphrase / Summary)
-            </label>
-            <input
-              id="ev-shortdesc"
-              type="text"
-              className="admin-form-input"
-              placeholder="e.g. 36-hour autonomous agent coding marathon with grand prizes"
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              maxLength={255}
-            />
-          </div>
+            <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="admin-label">Short Tagline (Optional)</label>
+              <input
+                type="text"
+                className="admin-input"
+                placeholder="One-line hook for portal cards..."
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+              />
+            </div>
 
-          <div className="admin-form-group">
-            <label className="admin-form-label" htmlFor="ev-desc">
-              Full Event Description & Rules *
-            </label>
-            <textarea
-              id="ev-desc"
-              rows="5"
-              className="admin-form-textarea"
-              placeholder="Comprehensive event details, guidelines, rules, and problem statement..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-            {fieldErrors.description && <div className="admin-form-error">{fieldErrors.description}</div>}
+            <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="admin-label">Full Description *</label>
+              <textarea
+                className="admin-textarea"
+                rows="4"
+                placeholder="Detailed event overview, rules, prizes, and instructions..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
           </div>
         </div>
 
-        {/* 2. Schedule */}
+        {/* Section 2: Schedules */}
         <div className="admin-form-section">
-          <h2 className="admin-form-section-title">2. Event Schedule</h2>
-          <div className="admin-grid-2">
+          <h3 className="admin-form-section-title">2. Scheduling</h3>
+          <p className="admin-form-section-desc">Event execution timeline and attendee registration window.</p>
+
+          <div className="admin-form-grid-2">
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="ev-start">
-                Event Starts *
-              </label>
+              <label className="admin-label">Event Start Date & Time *</label>
               <input
-                id="ev-start"
                 type="datetime-local"
-                className="admin-form-input"
+                className="admin-input"
                 value={startDateTime}
                 onChange={(e) => setStartDateTime(e.target.value)}
                 required
               />
-              {fieldErrors.startDateTime && <div className="admin-form-error">{fieldErrors.startDateTime}</div>}
             </div>
 
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="ev-end">
-                Event Ends *
-              </label>
+              <label className="admin-label">Event End Date & Time</label>
               <input
-                id="ev-end"
                 type="datetime-local"
-                className="admin-form-input"
+                className="admin-input"
                 value={endDateTime}
                 onChange={(e) => setEndDateTime(e.target.value)}
-                required
               />
-              {fieldErrors.endDateTime && <div className="admin-form-error">{fieldErrors.endDateTime}</div>}
             </div>
-          </div>
-        </div>
 
-        {/* 3. Registration Window */}
-        <div className="admin-form-section">
-          <h2 className="admin-form-section-title">3. Registration Window</h2>
-          <div className="admin-grid-2">
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="reg-start">
-                Registration Opens *
-              </label>
+              <label className="admin-label">Registration Opens</label>
               <input
-                id="reg-start"
                 type="datetime-local"
-                className="admin-form-input"
+                className="admin-input"
                 value={registrationStart}
                 onChange={(e) => setRegistrationStart(e.target.value)}
-                required
               />
-              {fieldErrors.registrationStart && <div className="admin-form-error">{fieldErrors.registrationStart}</div>}
             </div>
 
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="reg-end">
-                Registration Closes *
-              </label>
+              <label className="admin-label">Registration Deadline</label>
               <input
-                id="reg-end"
                 type="datetime-local"
-                className="admin-form-input"
+                className="admin-input"
                 value={registrationEnd}
                 onChange={(e) => setRegistrationEnd(e.target.value)}
-                required
               />
-              {fieldErrors.registrationEnd && <div className="admin-form-error">{fieldErrors.registrationEnd}</div>}
             </div>
           </div>
         </div>
 
-        {/* 4. Registration Type & Team Configuration */}
+        {/* Section 3: Registration Rules */}
         <div className="admin-form-section">
-          <h2 className="admin-form-section-title">4. Participation & Team Configuration</h2>
+          <h3 className="admin-form-section-title">3. Registration Settings</h3>
+          <p className="admin-form-section-desc">Individual vs Team participation bounds and capacity limits.</p>
 
-          <div className="admin-form-group">
-            <label className="admin-form-label">Registration Type *</label>
-            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-              <label className="admin-checkbox-label">
-                <input
-                  type="radio"
-                  name="regType"
-                  value="INDIVIDUAL"
-                  checked={registrationType === 'INDIVIDUAL'}
-                  onChange={() => setRegistrationType('INDIVIDUAL')}
-                />
-                <span>Individual Only</span>
-              </label>
-
-              <label className="admin-checkbox-label">
-                <input
-                  type="radio"
-                  name="regType"
-                  value="TEAM"
-                  checked={registrationType === 'TEAM'}
-                  onChange={() => setRegistrationType('TEAM')}
-                />
-                <span>Team Only</span>
-              </label>
-
-              <label className="admin-checkbox-label">
-                <input
-                  type="radio"
-                  name="regType"
-                  value="BOTH"
-                  checked={registrationType === 'BOTH'}
-                  onChange={() => setRegistrationType('BOTH')}
-                />
-                <span>Individual or Team (Both)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Conditional Team Settings */}
-          {(registrationType === 'TEAM' || registrationType === 'BOTH') && (
-            <div className="admin-grid-2" style={{ marginTop: '1.25rem', padding: '1rem', background: 'var(--admin-bg-elevated)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)' }}>
-              <div className="admin-form-group" style={{ margin: 0 }}>
-                <label className="admin-form-label" htmlFor="team-min">
-                  Minimum Team Members *
-                </label>
-                <input
-                  id="team-min"
-                  type="number"
-                  min="1"
-                  className="admin-form-input"
-                  value={teamMinSize}
-                  onChange={(e) => setTeamMinSize(e.target.value)}
-                  required
-                />
-                {fieldErrors.teamMinSize && <div className="admin-form-error">{fieldErrors.teamMinSize}</div>}
-              </div>
-
-              <div className="admin-form-group" style={{ margin: 0 }}>
-                <label className="admin-form-label" htmlFor="team-max">
-                  Maximum Team Members *
-                </label>
-                <input
-                  id="team-max"
-                  type="number"
-                  min={teamMinSize || 1}
-                  className="admin-form-input"
-                  value={teamMaxSize}
-                  onChange={(e) => setTeamMaxSize(e.target.value)}
-                  required
-                />
-                {fieldErrors.teamMaxSize && <div className="admin-form-error">{fieldErrors.teamMaxSize}</div>}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 5. Additional Event Settings */}
-        <div className="admin-form-section">
-          <h2 className="admin-form-section-title">5. Event Visibility & Limits</h2>
-
-          <div className="admin-grid-2">
+          <div className="admin-form-grid-2">
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="reg-limit">
-                Registration Capacity Limit (Optional)
-              </label>
+              <label className="admin-label">Registration Type</label>
+              <select
+                className="admin-select"
+                value={registrationType}
+                onChange={(e) => setRegistrationType(e.target.value)}
+              >
+                <option value="INDIVIDUAL">INDIVIDUAL (Solo participant)</option>
+                <option value="TEAM">TEAM (Squad / Group)</option>
+              </select>
+            </div>
+
+            <div className="admin-form-group">
+              <label className="admin-label">Capacity Limit (Optional)</label>
               <input
-                id="reg-limit"
                 type="number"
-                min="1"
-                className="admin-form-input"
+                className="admin-input"
                 placeholder="Leave blank for unlimited"
                 value={registrationLimit}
                 onChange={(e) => setRegistrationLimit(e.target.value)}
               />
             </div>
 
+            {registrationType === 'TEAM' && (
+              <>
+                <div className="admin-form-group">
+                  <label className="admin-label">Min Team Members</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="admin-input"
+                    value={teamMinSize}
+                    onChange={(e) => setTeamMinSize(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Max Team Members</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="admin-input"
+                    value={teamMaxSize}
+                    onChange={(e) => setTeamMaxSize(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             <div className="admin-form-group">
-              <label className="admin-form-label" htmlFor="disp-order">
-                Display Order
-              </label>
+              <label className="admin-label">Display Order</label>
               <input
-                id="disp-order"
                 type="number"
-                className="admin-form-input"
+                className="admin-input"
                 value={displayOrder}
                 onChange={(e) => setDisplayOrder(e.target.value)}
               />
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-            <label className="admin-checkbox-label">
+        {/* Section 4: Visibility & Status */}
+        <div className="admin-form-section">
+          <h3 className="admin-form-section-title">4. Visibility</h3>
+          <div className="admin-checkbox-group" style={{ marginTop: '0.5rem' }}>
+            <label className="admin-checkbox-item">
               <input
                 type="checkbox"
-                className="admin-checkbox"
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
               />
-              <span>★ Mark as Featured Event (Highlights on festival landing page)</span>
+              <div>
+                <strong>Featured Event</strong>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)' }}>
+                  Highlighted prominently on the public RUVERSE festival schedule.
+                </div>
+              </div>
             </label>
 
-            <label className="admin-checkbox-label">
+            <label className="admin-checkbox-item">
               <input
                 type="checkbox"
-                className="admin-checkbox"
                 checked={isOpenForAll}
                 onChange={(e) => setIsOpenForAll(e.target.checked)}
               />
-              <span>🌐 Open for All (Available to external universities & attendees)</span>
-            </label>
-
-            <label className="admin-checkbox-label">
-              <input
-                type="checkbox"
-                className="admin-checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-              />
-              <span>Active (Status switch for overall festival visibility)</span>
+              <div>
+                <strong>Open For All Colleges</strong>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)' }}>
+                  Permits inter-college and external university participants to register.
+                </div>
+              </div>
             </label>
           </div>
         </div>
 
-        {/* Actions Bar */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
           <Link to="/admin/events" className="admin-btn admin-btn-secondary">
             Cancel
           </Link>
           <button
-            type="submit"
-            className="admin-btn admin-btn-secondary"
+            type="button"
             disabled={isSubmitting}
+            onClick={(e) => handleSubmit(e, false)}
+            className="admin-btn admin-btn-secondary"
           >
-            {isSubmitting ? 'Saving...' : 'Save as Draft'}
+            {isSubmitting ? 'Saving...' : 'Save Draft'}
           </button>
           <button
             type="button"
-            className="admin-btn admin-btn-primary"
-            onClick={(e) => handleSubmit(e, true)}
             disabled={isSubmitting}
+            onClick={(e) => handleSubmit(e, true)}
+            className="admin-btn admin-btn-primary"
           >
-            {isSubmitting ? 'Saving...' : 'Save & Publish Live'}
+            {isSubmitting ? 'Publishing...' : 'Publish Event Live'}
           </button>
         </div>
       </form>

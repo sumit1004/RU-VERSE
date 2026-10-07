@@ -28,12 +28,12 @@ export function mapApiEventToPublicEvent(apiEvent, index = 0) {
     }
   }
 
-  // Registration URL based on registration mode
+  // Registration / Event Details URL
   let registrationUrl = null;
-  if (apiEvent.registrationMode === 'EXTERNAL' && apiEvent.externalRegistrationUrl) {
-    registrationUrl = apiEvent.externalRegistrationUrl;
+  if (apiEvent.registrationMode === 'EXTERNAL' && (apiEvent.externalRegistrationUrl || apiEvent.registrationLink)) {
+    registrationUrl = apiEvent.externalRegistrationUrl || apiEvent.registrationLink;
   } else if (apiEvent.slug) {
-    registrationUrl = `/events/${apiEvent.slug}/register`;
+    registrationUrl = `/events/${apiEvent.slug}`;
   }
 
   return {
@@ -58,24 +58,24 @@ export function mapApiEventToPublicEvent(apiEvent, index = 0) {
 }
 
 /**
- * Adapts an array of backend API events, with static fallback
+ * Adapts an array of backend API events
  */
 export function adaptApiEvents(apiEvents) {
-  if (!Array.isArray(apiEvents) || apiEvents.length === 0) {
-    return EVENTS;
+  if (!Array.isArray(apiEvents)) {
+    return [];
   }
   return apiEvents.map((evt, idx) => mapApiEventToPublicEvent(evt, idx));
 }
 
 /**
- * Adapts categories from backend API or falls back to static categories
+ * Adapts categories from backend API
  */
 export function adaptApiCategories(apiCategories) {
+  const allCat = { id: 'all', label: 'ALL' };
   if (!Array.isArray(apiCategories) || apiCategories.length === 0) {
-    return EVENT_CATEGORIES;
+    return [allCat];
   }
   
-  const allCat = { id: 'all', label: 'ALL ARENAS' };
   const mapped = apiCategories
     .filter((c) => c.isActive !== false)
     .map((c) => ({

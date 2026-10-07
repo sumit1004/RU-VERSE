@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import PlanetHUD from '../PlanetHUD';
 import EventsModal from './EventsModal';
 import { universeSections } from '../../data/universeData';
-import { eventsData } from '../../data/eventsData';
 import { eventService } from '../../services/eventService';
 import { adaptApiEvents } from '../../utils/eventAdapter';
 
 export default function EventsSection({ active, progress }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [manifestEvents, setManifestEvents] = useState(eventsData);
+  const [manifestEvents, setManifestEvents] = useState([]);
   const section = universeSections[2];
   const isVisible = active && progress >= 0.15;
 
@@ -16,12 +15,12 @@ export default function EventsSection({ active, progress }) {
     let isMounted = true;
     async function loadEvents() {
       try {
-        const live = await eventService.getPublicEvents().catch(() => null);
-        if (isMounted && Array.isArray(live) && live.length > 0) {
+        const live = await eventService.getPublicEvents().catch(() => []);
+        if (isMounted && Array.isArray(live)) {
           setManifestEvents(adaptApiEvents(live));
         }
       } catch {
-        // Safe fallback to eventsData
+        // Handle error cleanly
       }
     }
     loadEvents();

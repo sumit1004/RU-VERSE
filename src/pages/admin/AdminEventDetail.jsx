@@ -1,185 +1,174 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { eventService } from '../../services/eventService';
+import StatusBadge from '../../components/admin/StatusBadge';
 import '../../styles/admin.css';
 
 export default function AdminEventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState(null);
+
+  const loadEvent = async () => {
+    try {
+      setLoading(true);
+      setLoadError(null);
+      const data = await eventService.getAdminEventById(id);
+      if (!data) {
+        setLoadError({ status: 404, message: 'The requested event could not be found.' });
+      } else {
+        setEvent(data);
+      }
+    } catch (err) {
+      if (err.status === 404) {
+        setLoadError({ status: 404, message: 'The requested event could not be found.' });
+      } else if (err.status === 403) {
+        setLoadError({ status: 403, message: 'You do not have permission to view this event.' });
+      } else if (err.status === 401) {
+        setLoadError({ status: 401, message: 'Your session has expired. Please log in again.' });
+      } else {
+        setLoadError({ status: err.status || 500, message: err.message || 'Failed to load event details.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadEvent() {
-      try {
-        setLoading(true);
-        const data = await eventService.getAdminEvent(id);
-        setEvent(data);
-      } catch (err) {
-        setError(err.message || 'Failed to load event details.');
-      } finally {
-        setLoading(false);
-      }
+    if (id) {
+      loadEvent();
     }
-    loadEvent();
   }, [id]);
 
   if (loading) {
     return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ad-text-muted)' }}>
         Loading event details...
       </div>
     );
   }
 
-  if (error || !event) {
+  if (loadError || !event) {
+    const errorInfo = loadError || { status: 404, message: 'The requested event could not be found.' };
     return (
-      <div className="admin-alert admin-alert-danger">
-        {error || 'Event not found.'}
+      <div>
+        <div className="admin-page-header">
+          <Link to="/admin/events" className="admin-btn admin-btn-ghost admin-btn-sm">
+            ← Back to Events
+          </Link>
+        </div>
+        <div className="admin-form-section" style={{ textAlign: 'center', padding: '3rem' }}>
+          <h2 style={{ color: 'var(--ad-danger-text)', margin: '0 0 0.5rem 0' }}>
+            {errorInfo.status === 404 ? 'Event Not Found' : errorInfo.status === 403 ? 'Access Denied' : 'Unable to Load Event'}
+          </h2>
+          <p style={{ color: 'var(--ad-text-muted)', margin: '0 0 1.5rem 0' }}>
+            {errorInfo.message}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <Link to="/admin/events" className="admin-btn admin-btn-secondary admin-btn-sm">
+              Back to Events
+            </Link>
+            {errorInfo.status !== 404 && (
+              <button onClick={loadEvent} className="admin-btn admin-btn-primary admin-btn-sm">
+                Try Again
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ maxWidth: '840px' }}>
+      {/* Page Header */}
+      <div className="admin-page-header">
         <div>
-          <Link to="/admin/events" style={{ color: '#818cf8', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-block', marginBottom: '0.5rem' }}>
-            ← Back to All Events
-          </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#fff', margin: 0 }}>
-              {event.title}
-            </h1>
-            {event.isFeatured && (
-              <span style={{ fontSize: '0.75rem', background: 'rgba(234, 179, 8, 0.2)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.4)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                ★ FEATURED
-              </span>
-            )}
-            <span className={`admin-badge ${event.isPublished ? 'admin-badge-active' : 'admin-badge-inactive'}`}>
-              {event.isPublished ? 'Published' : 'Draft'}
-            </span>
+          <div style={{ marginBottom: '0.35rem' }}>
+            <Link to="/admin/events" style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', textDecoration: 'none' }}>
+              ← Back to Events
+            </Link>
           </div>
+          <h1 className="admin-page-title">
+            {event.title}
+          </h1>
+          <p className="admin-page-subtitle">
+            /{event.slug} • {event.category?.name || 'Uncategorized'}
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <Link to={`/admin/events/${id}/form`} className="admin-btn admin-btn-primary">
-            📋 Dynamic Form Builder
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <StatusBadge status={event.isPublished ? 'PUBLISHED' : 'DRAFT'} />
+          {event.isFeatured && <StatusBadge status="ACTIVE" label="★ FEATURED" />}
+
+          <Link to={`/admin/events/${id}/form`} className="admin-btn admin-btn-secondary admin-btn-sm">
+            Form Builder 📝
           </Link>
-          <Link to={`/admin/events/${id}/edit`} className="admin-btn admin-btn-secondary">
-            Edit Event
+          <Link to={`/admin/events/${id}/registrations`} className="admin-btn admin-btn-secondary admin-btn-sm">
+            Registrations
+          </Link>
+          <Link to={`/admin/events/${id}/edit`} className="admin-btn admin-btn-primary admin-btn-sm">
+            Edit
           </Link>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="admin-grid-2">
-        {/* Left Column: Event Core Info */}
-        <div className="admin-card">
-          <h2 className="admin-card-title" style={{ marginBottom: '1rem' }}>Event Overview</h2>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <div className="admin-stat-label">Category</div>
-              <div style={{ fontWeight: 600, color: '#818cf8' }}>{event.category?.name}</div>
+      {/* Overview Info */}
+      <div className="admin-form-section">
+        <h3 className="admin-form-section-title">Event Overview</h3>
+        <div className="admin-form-grid-2" style={{ marginTop: '0.75rem', gap: '0.75rem 1.5rem' }}>
+          <div>
+            <span className="admin-label">Venue Location</span>
+            <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              📍 {event.venue || 'TBD'}
             </div>
-
-            <div>
-              <div className="admin-stat-label">Public Slug / URL</div>
-              <code style={{ color: '#38bdf8', background: 'rgba(14, 165, 233, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                /events/{event.slug}
-              </code>
+          </div>
+          <div>
+            <span className="admin-label">Registration Type</span>
+            <div style={{ marginTop: '0.15rem' }}>
+              <StatusBadge status={event.registrationType} />
             </div>
-
-            <div>
-              <div className="admin-stat-label">Venue / Stage</div>
-              <div style={{ color: '#fff', fontWeight: 600 }}>📍 {event.venue}</div>
+          </div>
+          <div>
+            <span className="admin-label">Event Date & Time</span>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              📅 {event.startDateTime ? new Date(event.startDateTime).toLocaleString() : 'TBD'}
             </div>
-
-            {event.shortDescription && (
-              <div>
-                <div className="admin-stat-label">Short Summary</div>
-                <div style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>{event.shortDescription}</div>
+          </div>
+          <div>
+            <span className="admin-label">Capacity Limit</span>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              {event.registrationLimit ? `${event.registrationLimit} participants max` : 'Unlimited'}
+            </div>
+          </div>
+          {event.registrationType === 'TEAM' && (
+            <div>
+              <span className="admin-label">Team Bounds</span>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+                {event.teamMinSize || 1} to {event.teamMaxSize || 4} members
               </div>
-            )}
-
-            <div>
-              <div className="admin-stat-label">Description & Rules</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.875rem', whiteSpace: 'pre-line', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)' }}>
-                {event.description}
-              </div>
+            </div>
+          )}
+          <div>
+            <span className="admin-label">Eligibility</span>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              {event.isOpenForAll ? 'Open to all colleges' : 'Internal campus only'}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Right Column: Schedule & Registration Status */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="admin-card">
-            <h2 className="admin-card-title" style={{ marginBottom: '1rem' }}>Dates & Schedule</h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div>
-                <div className="admin-stat-label">Event Timeline</div>
-                <div style={{ color: '#fff', fontSize: '0.875rem' }}>
-                  <strong>Starts:</strong> {new Date(event.startDateTime).toLocaleString()}<br />
-                  <strong>Ends:</strong> {new Date(event.endDateTime).toLocaleString()}
-                </div>
-              </div>
-
-              <div>
-                <div className="admin-stat-label">Registration Window</div>
-                <div style={{ color: '#fff', fontSize: '0.875rem' }}>
-                  <strong>Opens:</strong> {new Date(event.registrationStart).toLocaleString()}<br />
-                  <strong>Closes:</strong> {new Date(event.registrationEnd).toLocaleString()}
-                </div>
-              </div>
-
-              <div>
-                <div className="admin-stat-label">Live Registration Status</div>
-                <span className={`admin-badge admin-badge-${event.registrationStatus.toLowerCase()}`}>
-                  {event.registrationStatus}
-                </span>
-              </div>
-            </div>
+      {/* Description */}
+      <div className="admin-form-section">
+        <h3 className="admin-form-section-title">Event Description</h3>
+        {event.shortDescription && (
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ad-text-secondary)', marginBottom: '0.75rem' }}>
+            {event.shortDescription}
           </div>
-
-          <div className="admin-card">
-            <h2 className="admin-card-title" style={{ marginBottom: '1rem' }}>Participation Rules</h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#94a3b8' }}>Registration Type:</span>
-                <span style={{ fontWeight: 600, color: '#fff' }}>{event.registrationType}</span>
-              </div>
-
-              {event.teamMinSize && (
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#94a3b8' }}>Team Size Bounds:</span>
-                  <span style={{ fontWeight: 600, color: '#fff' }}>{event.teamMinSize} to {event.teamMaxSize} members</span>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#94a3b8' }}>Capacity Limit:</span>
-                <span style={{ fontWeight: 600, color: '#fff' }}>{event.registrationLimit || 'Unlimited'}</span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#94a3b8' }}>Open for All Universities:</span>
-                <span style={{ fontWeight: 600, color: event.isOpenForAll ? '#34d399' : '#f87171' }}>
-                  {event.isOpenForAll ? 'Yes' : 'Restricted'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="admin-card" style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
-            <div>Created by: <strong style={{ color: '#cbd5e1' }}>{event.creator?.name || 'System Admin'}</strong> ({new Date(event.createdAt).toLocaleDateString()})</div>
-            {event.updater && (
-              <div style={{ marginTop: '0.25rem' }}>Last updated by: <strong style={{ color: '#cbd5e1' }}>{event.updater.name}</strong> ({new Date(event.updatedAt).toLocaleDateString()})</div>
-            )}
-          </div>
+        )}
+        <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+          {event.description}
         </div>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { EVENTS, EVENT_CATEGORIES } from '../../data/eventsData';
 import { eventService } from '../../services/eventService';
 import { categoryService } from '../../services/categoryService';
 import { adaptApiEvents, adaptApiCategories } from '../../utils/eventAdapter';
@@ -11,20 +10,21 @@ import './EventsModal.css';
 
 /**
  * EventsModal Component:
- * - Pure data-driven event database manifest for RUVERSE 2026.
+ * - Real-time data-driven event database manifest for RUVERSE 2026.
  * - Interactive technical search bar with live letter-by-letter filtering & top 5 suggestions.
- * - Category filtering working seamlessly alongside search.
- * - Deterministic filtering calculated from canonical dataset with backend API & fallback.
+ * - Category filtering working seamlessly alongside search with live database categories.
+ * - Zero dummy data; strictly connected to live published events.
  */
 export default function EventsModal({ isOpen, onClose }) {
   const closeBtnRef = useRef(null);
   const modalRef = useRef(null);
   const scrollAreaRef = useRef(null);
 
-  const [eventsList, setEventsList] = useState(EVENTS);
-  const [categoriesList, setCategoriesList] = useState(EVENT_CATEGORIES);
+  const [eventsList, setEventsList] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([{ id: 'all', label: 'ALL' }]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -32,33 +32,43 @@ export default function EventsModal({ isOpen, onClose }) {
     return false;
   });
 
-  // Fetch live published events & categories from backend with graceful fallback
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchLiveEvents() {
-      try {
-        const [apiEvents, apiCats] = await Promise.all([
-          eventService.getPublicEvents().catch(() => null),
-          categoryService.getPublicCategories().catch(() => null),
-        ]);
+  // Fetch live published events & categories from backend
+  const fetchLiveEvents = async () => {
+    try {
+      setLoading(true);
+      const [apiEvents, apiCats] = await Promise.all([
+        eventService.getPublicEvents().catch(() => []),
+        categoryService.getPublicCategories().catch(() => []),
+      ]);
 
-        if (isMounted) {
-          if (Array.isArray(apiEvents) && apiEvents.length > 0) {
-            setEventsList(adaptApiEvents(apiEvents));
-          }
-          if (Array.isArray(apiCats) && apiCats.length > 0) {
-            setCategoriesList(adaptApiCategories(apiCats));
-          }
-        }
-      } catch {
-        // Fallback to static data on any error
+      const adaptedEvents = adaptApiEvents(apiEvents);
+      const adaptedCategories = adaptApiCategories(apiCats);
+
+      setEventsList(adaptedEvents);
+      setCategoriesList(adaptedCategories);
+    } catch {
+      setEventsList([]);
+      setCategoriesList([{ id: 'all', label: 'ALL' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveEvents();
+  }, []);
+
+  // Refresh live data whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      fetchLiveEvents();
+      setSelectedCategory('all');
+      setSearchQuery('');
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = 0;
       }
     }
-    fetchLiveEvents();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  }, [isOpen]);
 
   // Track responsive viewport width
   useEffect(() => {
@@ -78,7 +88,7 @@ export default function EventsModal({ isOpen, onClose }) {
     return map;
   }, [categoriesList]);
 
-  // Pure deterministic calculation: Category filter + Search query filter from dataset
+  // Pure deterministic calculation: Category filter + Search query filter from real dataset
   const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const queryTerms = q ? q.split(/\s+/).filter(Boolean) : [];
@@ -103,7 +113,9 @@ export default function EventsModal({ isOpen, onClose }) {
         event.title,
         event.tagline,
         event.description,
+        event.venue,
         event.id,
+        event.slug,
         ...categories,
         ...(Array.isArray(event.dates) ? event.dates : [event.dates])
       ]
@@ -114,17 +126,6 @@ export default function EventsModal({ isOpen, onClose }) {
       return queryTerms.every((term) => searchableText.includes(term));
     });
   }, [eventsList, selectedCategory, searchQuery]);
-
-  // Reset category and search query on modal open
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedCategory('all');
-      setSearchQuery('');
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = 0;
-      }
-    }
-  }, [isOpen]);
 
   // Manage body scroll lock and keyboard ESC listener
   useEffect(() => {
@@ -230,26 +231,33 @@ export default function EventsModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* 2. Controls Row: Search Box + Category Filter Tabs */}
+        {/* 2. Controls Row: Search Box + Category Filter Tabs (Live Real-time Data) */}
         <div className="events-modal-controls-bar">
           <EventSearch
-            events={EVENTS}
+            events={eventsList}
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             onSelectSuggestion={handleSelectSuggestion}
             isMobile={isMobile}
           />
           <EventFilters
-            categories={EVENT_CATEGORIES}
+            categories={categoriesList}
             selectedCategory={selectedCategory}
             onSelectCategory={handleSelectCategory}
-            events={EVENTS}
+            events={eventsList}
           />
         </div>
 
         {/* 3. Card Grid Manifest (Internally Scrollable) */}
         <div className="events-modal-scroll-body" ref={scrollAreaRef}>
-          {filteredEvents.length > 0 ? (
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px', color: 'rgba(255,255,255,0.6)' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 12px #6366f1', marginBottom: '1rem', animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+              <span style={{ fontSize: '0.75rem', letterSpacing: '0.12em', fontFamily: 'monospace', color: '#94a3b8' }}>
+                SYNCING REAL-TIME EVENT MANIFEST...
+              </span>
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="events-cards-grid">
               {filteredEvents.map((event) => (
                 <EventCard
@@ -275,7 +283,7 @@ export default function EventsModal({ isOpen, onClose }) {
                     </span>
                   </>
                 ) : (
-                  'No active arenas found under this category filter.'
+                  'No live festival events currently available under this category.'
                 )}
               </p>
             </div>
@@ -288,7 +296,9 @@ export default function EventsModal({ isOpen, onClose }) {
             RUVERSE 2026 // RUNGTA INTERNATIONAL SKILLS UNIVERSITY
           </span>
           <span className="modal-footer-status">
-            {searchQuery.trim()
+            {loading
+              ? 'SYNCING...'
+              : searchQuery.trim()
               ? `${filteredEvents.length} EVENT${filteredEvents.length === 1 ? '' : 'S'} FOUND`
               : `DISPLAYING ${filteredEvents.length} OF ${eventsList.length} ARENAS`}
           </span>

@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import registrationService from '../../services/registrationService.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import StatusBadge from '../../components/admin/StatusBadge.jsx';
+import Toast from '../../components/admin/Toast.jsx';
 import '../../styles/admin.css';
 
 export default function AdminRegistrationDetail() {
   const { id } = useParams();
-  const { hasPermission } = useAuth();
+  const { hasPermission, currentUser } = useAuth();
+  const isAdmin = currentUser?.role?.slug === 'admin';
 
   const [registration, setRegistration] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notification, setNotification] = useState(null);
+  const [toast, setToast] = useState(null);
 
   // Status Change State
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -19,11 +22,11 @@ export default function AdminRegistrationDetail() {
   const [statusNotes, setStatusNotes] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const canEdit = hasPermission('registrations.edit');
+  const canEdit = hasPermission('registrations.edit') || isAdmin;
 
-  const showNotification = (type, message) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
   };
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function AdminRegistrationDetail() {
       const res = await registrationService.getRegistration(id);
       setRegistration(res);
       setNewStatus(res.status);
+      setStatusNotes(res.statusNotes || '');
     } catch (err) {
       console.error('Failed to load registration details:', err);
       setError(err.message || 'Failed to load registration details.');
@@ -52,355 +56,272 @@ export default function AdminRegistrationDetail() {
     try {
       setUpdatingStatus(true);
       await registrationService.updateRegistrationStatus(registration.id, newStatus, statusNotes);
-      showNotification('success', `Status updated to ${newStatus}.`);
+      showToast('success', `Status updated to ${newStatus}.`);
       setShowStatusModal(false);
       loadRegistration();
     } catch (err) {
-      showNotification('error', err.message || 'Failed to update status.');
+      showToast('error', err.message || 'Failed to update status.');
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return <span className="admin-status-badge published">CONFIRMED</span>;
-      case 'PENDING':
-        return <span className="admin-status-badge upcoming">PENDING</span>;
-      case 'CANCELLED':
-        return <span className="admin-status-badge archived">CANCELLED</span>;
-      case 'REJECTED':
-        return <span className="admin-status-badge draft">REJECTED</span>;
-      default:
-        return <span className="admin-status-badge draft">{status}</span>;
-    }
-  };
-
   if (loading) {
     return (
-      <div className="admin-events-page">
-        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-          <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
-          <p style={{ color: 'var(--admin-text-muted)' }}>Loading registration snapshot record...</p>
-        </div>
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ad-text-muted)' }}>
+        Loading registration details...
       </div>
     );
   }
 
   if (error || !registration) {
     return (
-      <div className="admin-events-page">
-        <div className="admin-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <h2 style={{ color: 'var(--admin-status-danger-text)', marginBottom: '12px' }}>Registration Not Found</h2>
-          <p style={{ color: 'var(--admin-text-muted)', marginBottom: '24px' }}>
+      <div>
+        <div className="admin-page-header">
+          <Link to="/admin/registrations" className="admin-btn admin-btn-ghost admin-btn-sm">
+            ← Back to Registrations
+          </Link>
+        </div>
+        <div className="admin-form-section" style={{ textAlign: 'center', padding: '3rem' }}>
+          <h2 style={{ color: 'var(--ad-danger-text)', margin: '0 0 0.5rem 0' }}>Registration Not Found</h2>
+          <p style={{ color: 'var(--ad-text-muted)', margin: 0 }}>
             {error || 'The requested registration record could not be retrieved.'}
           </p>
-          <Link to="/admin/registrations" className="admin-btn admin-btn-primary">
-            <span>← Back to Registrations</span>
-          </Link>
         </div>
       </div>
     );
   }
 
-  const { event, form, participants = [], fieldValues = [] } = registration;
+  const participants = registration.participants || [];
 
   return (
-    <div className="admin-events-page">
-      {/* Notifications */}
-      {notification && (
-        <div className={`admin-notification ${notification.type === 'error' ? 'error' : 'success'}`}>
-          <span>{notification.type === 'error' ? '⚠️' : '✅'}</span>
-          <span>{notification.message}</span>
-        </div>
-      )}
+    <div>
+      <Toast toast={toast} />
 
       {/* Page Header */}
       <div className="admin-page-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <Link
-              to="/admin/registrations"
-              style={{ color: 'var(--admin-text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}
-            >
-              ← Registrations
+          <div style={{ marginBottom: '0.35rem' }}>
+            <Link to="/admin/registrations" style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', textDecoration: 'none' }}>
+              ← Back to Registrations
             </Link>
-            <span style={{ color: 'var(--admin-border-subtle)' }}>/</span>
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#6366f1' }}>
-              {registration.registrationNumber}
-            </span>
           </div>
-          <h1 className="admin-page-title" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+          <h1 className="admin-page-title" style={{ fontFamily: 'var(--ad-font-mono)' }}>
             {registration.registrationNumber}
           </h1>
-          <p className="admin-page-desc">
-            Submitted for <strong>{event?.title}</strong> on{' '}
-            {new Date(registration.submittedAt).toLocaleString('en-IN', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            })}
+          <p className="admin-page-subtitle">
+            {registration.event?.title} • Submitted {new Date(registration.submittedAt).toLocaleString()}
           </p>
         </div>
 
-        <div className="admin-header-actions">
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <StatusBadge status={registration.status} />
           {canEdit && (
             <button
-              type="button"
               onClick={() => setShowStatusModal(true)}
-              className="admin-btn admin-btn-primary"
+              className="admin-btn admin-btn-secondary admin-btn-sm"
             >
-              <span>Update Status</span>
+              Update Status
             </button>
           )}
-
-          <Link to={`/admin/events/${event?.id}/registrations`} className="admin-btn admin-btn-secondary">
-            <span>Event Registrations</span>
-          </Link>
         </div>
       </div>
 
-      {/* Overview Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-        {/* Registration State Card */}
-        <div className="admin-card">
-          <div className="admin-card-header">
-            <h3 className="admin-card-title">Registration Status</h3>
-            {getStatusBadge(registration.status)}
-          </div>
-          <div className="admin-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>Entry Type:</span>
-              <span style={{ fontWeight: 600, color: '#fff' }}>{registration.registrationType}</span>
+      {/* Overview Information Bar */}
+      <div className="admin-form-section">
+        <h3 className="admin-form-section-title">Registration Overview</h3>
+        <div className="admin-form-grid-2" style={{ marginTop: '0.75rem', gap: '0.75rem 1.5rem' }}>
+          <div>
+            <span className="admin-label">Event Name</span>
+            <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              {registration.event?.title}
             </div>
-
-            {registration.teamName && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                <span style={{ color: 'var(--admin-text-muted)' }}>Team Name:</span>
-                <span style={{ fontWeight: 600, color: '#c084fc' }}>{registration.teamName}</span>
+          </div>
+          <div>
+            <span className="admin-label">Registration Type</span>
+            <div style={{ marginTop: '0.15rem' }}>
+              <StatusBadge status={registration.registrationType} />
+            </div>
+          </div>
+          {registration.teamName && (
+            <div>
+              <span className="admin-label">Team Name</span>
+              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+                {registration.teamName}
               </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>Form Snapshot:</span>
-              <span style={{ fontWeight: 500, color: 'var(--admin-text-main)' }}>
-                Form #{registration.formId} (Version {registration.formVersion})
-              </span>
             </div>
-
-            {registration.cancelledAt && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                <span style={{ color: 'var(--admin-status-danger-text)' }}>Cancelled On:</span>
-                <span style={{ color: 'var(--admin-status-danger-text)' }}>
-                  {new Date(registration.cancelledAt).toLocaleString('en-IN')}
-                </span>
+          )}
+          <div>
+            <span className="admin-label">Total Participants</span>
+            <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+              {participants.length} member{participants.length === 1 ? '' : 's'}
+            </div>
+          </div>
+          {registration.statusNotes && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <span className="admin-label">Status Notes</span>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-secondary)', marginTop: '0.15rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: 'var(--ad-radius-sm)' }}>
+                {registration.statusNotes}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Event Summary Card */}
-        <div className="admin-card">
-          <div className="admin-card-header">
-            <h3 className="admin-card-title">Event Information</h3>
-            {event?.category && (
-              <span className="admin-badge">{event.category.name}</span>
-            )}
-          </div>
-          <div className="admin-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>Title:</span>
-              <span style={{ fontWeight: 600, color: '#fff' }}>{event?.title}</span>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>Venue:</span>
-              <span style={{ color: 'var(--admin-text-main)' }}>{event?.venue}</span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>Event Date:</span>
-              <span style={{ color: 'var(--admin-text-main)' }}>
-                {event?.startDateTime ? new Date(event.startDateTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Registration-level Snapshot Fields */}
-      {fieldValues.length > 0 && (
-        <div className="admin-card" style={{ marginBottom: '24px' }}>
-          <div className="admin-card-header">
-            <h3 className="admin-card-title">Registration Questionnaire (Snapshot)</h3>
-          </div>
-          <div className="admin-card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {fieldValues.map((fv) => (
-                <div key={fv.id} style={{ background: 'var(--admin-bg-elevated)', padding: '12px 16px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--admin-text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {fv.fieldLabel}
-                  </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fff', marginTop: '4px' }}>
-                    {fv.value || '—'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Participants List */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3 className="admin-card-title">
-            Participants ({participants.length} Member{participants.length === 1 ? '' : 's'})
-          </h3>
-        </div>
-        <div className="admin-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="admin-form-section">
+        <h3 className="admin-form-section-title">
+          Participant Records ({participants.length})
+        </h3>
+        <p className="admin-form-section-desc">
+          Individual attendee contact details and form field responses.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {participants.map((p, idx) => (
             <div
-              key={p.id}
+              key={p.id || idx}
               style={{
-                background: 'var(--admin-bg-elevated)',
-                border: '1px solid var(--admin-border-subtle)',
-                borderRadius: '10px',
-                padding: '20px',
+                border: '1px solid var(--ad-border-subtle)',
+                borderRadius: 'var(--ad-radius-sm)',
+                padding: '1rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--admin-border-subtle)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: 'rgba(99, 102, 241, 0.2)',
-                      color: '#818cf8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    {p.participantOrder || idx + 1}
-                  </span>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#fff' }}>
-                      {p.fullName}
-                      {idx === 0 && registration.registrationType === 'TEAM' && (
-                        <span style={{ fontSize: '0.75rem', marginLeft: '8px', color: '#c084fc', background: 'rgba(168, 85, 247, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
-                          Team Leader
-                        </span>
-                      )}
-                    </h4>
-                  </div>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ad-accent)' }}>
+                  {idx === 0 && registration.teamName ? '👑 Team Leader' : `Participant #${idx + 1}`}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)' }}>
+                  Order: {p.participantOrder || idx + 1}
+                </span>
               </div>
 
-              {/* Fixed Baseline Fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: p.fieldValues?.length > 0 ? '16px' : '0' }}>
+              <div className="admin-form-grid-2" style={{ gap: '0.75rem 1.5rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-dim)' }}>EMAIL ADDRESS</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--admin-text-main)', marginTop: '2px' }}>
+                  <span className="admin-label">Full Name</span>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ad-text-primary)' }}>
+                    {p.fullName}
+                  </div>
+                </div>
+                <div>
+                  <span className="admin-label">Email Address</span>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)' }}>
                     {p.email}
                   </div>
                 </div>
-
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-dim)' }}>MOBILE NUMBER</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--admin-text-main)', marginTop: '2px' }}>
+                  <span className="admin-label">Mobile Number</span>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)' }}>
                     {p.mobile}
                   </div>
                 </div>
-
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-dim)' }}>COLLEGE / INSTITUTION</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--admin-text-main)', marginTop: '2px' }}>
+                  <span className="admin-label">College / Institution</span>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)' }}>
                     {p.college}
                   </div>
                 </div>
-              </div>
 
-              {/* Custom Participant Fields Snapshot */}
-              {p.fieldValues && p.fieldValues.length > 0 && (
-                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px dashed var(--admin-border-subtle)' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#38bdf8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>
-                    Custom Participant Snapshot
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                    {p.fieldValues.map((cfv) => (
-                      <div key={cfv.id}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-dim)' }}>
-                          {cfv.fieldLabel}
+                {/* Custom Participant Fields if any */}
+                {p.fieldValues && p.fieldValues.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--ad-border-subtle)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ad-text-muted)', marginBottom: '0.5rem' }}>
+                      Additional Responses
+                    </div>
+                    <div className="admin-form-grid-2" style={{ gap: '0.5rem 1.5rem' }}>
+                      {p.fieldValues.map((fv) => (
+                        <div key={fv.id}>
+                          <span className="admin-label">{fv.fieldKey?.replace(/_/g, ' ')}</span>
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-secondary)' }}>
+                            {fv.value || '—'}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.88rem', color: '#fff', marginTop: '2px', wordBreak: 'break-word' }}>
-                          {cfv.value || '—'}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Update Status Modal */}
+      {/* Registration Level Custom Fields (if any) */}
+      {registration.fieldValues && registration.fieldValues.length > 0 && (
+        <div className="admin-form-section">
+          <h3 className="admin-form-section-title">Registration Submission Details</h3>
+          <div className="admin-form-grid-2" style={{ marginTop: '0.75rem' }}>
+            {registration.fieldValues.map((rfv) => (
+              <div key={rfv.id}>
+                <span className="admin-label">{rfv.fieldKey?.replace(/_/g, ' ')}</span>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
+                  {rfv.value || '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal */}
       {showStatusModal && (
         <div className="admin-modal-overlay">
-          <div className="admin-modal-card" style={{ maxWidth: '440px' }}>
-            <h3 style={{ color: '#fff', margin: '0 0 8px' }}>Update Registration Status</h3>
-            <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.88rem', margin: '0 0 20px' }}>
-              Registration <strong>{registration.registrationNumber}</strong>
-            </p>
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title">Update Status — {registration.registrationNumber}</h3>
+              <button
+                onClick={() => setShowStatusModal(false)}
+                className="admin-modal-close"
+              >
+                ×
+              </button>
+            </div>
 
             <form onSubmit={handleStatusUpdate}>
-              <div className="admin-form-group">
-                <label className="admin-label">Status</label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="admin-select"
-                  required
-                >
-                  <option value="CONFIRMED">CONFIRMED (Admitted)</option>
-                  <option value="PENDING">PENDING (Under Review)</option>
-                  <option value="WAITLISTED">WAITLISTED (Queue)</option>
-                  <option value="CANCELLED">CANCELLED (Safe cancellation)</option>
-                  <option value="REJECTED">REJECTED (Invalid / Disqualified)</option>
-                </select>
+              <div className="admin-modal-body">
+                <div className="admin-form-group">
+                  <label className="admin-label">Status</label>
+                  <select
+                    className="admin-select"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    required
+                  >
+                    <option value="CONFIRMED">CONFIRMED</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                    <option value="REJECTED">REJECTED</option>
+                    <option value="WAITLISTED">WAITLISTED</option>
+                  </select>
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Status Change Notes</label>
+                  <textarea
+                    className="admin-textarea"
+                    rows="3"
+                    placeholder="Enter reason or verification notes..."
+                    value={statusNotes}
+                    onChange={(e) => setStatusNotes(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="admin-form-group">
-                <label className="admin-label">Reason / Notes (Optional)</label>
-                <textarea
-                  value={statusNotes}
-                  onChange={(e) => setStatusNotes(e.target.value)}
-                  placeholder="Provide reason for audit log..."
-                  className="admin-input"
-                  rows={3}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <div className="admin-modal-footer">
                 <button
                   type="button"
                   onClick={() => setShowStatusModal(false)}
-                  disabled={updatingStatus}
-                  className="admin-btn admin-btn-secondary"
+                  className="admin-btn admin-btn-secondary admin-btn-sm"
                 >
-                  <span>Cancel</span>
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updatingStatus}
-                  className="admin-btn admin-btn-primary"
+                  className="admin-btn admin-btn-primary admin-btn-sm"
                 >
-                  <span>{updatingStatus ? 'Updating...' : 'Save Changes'}</span>
+                  {updatingStatus ? 'Updating...' : 'Save Status'}
                 </button>
               </div>
             </form>

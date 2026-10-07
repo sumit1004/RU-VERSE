@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { formService } from '../../services/formService';
+import StatusBadge from '../../components/admin/StatusBadge';
+import Toast from '../../components/admin/Toast';
 import '../../styles/admin.css';
 
 const FIELD_TYPES = [
@@ -22,7 +24,7 @@ export default function AdminFormBuilder() {
   const [form, setForm] = useState(null);
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState(null);
+  const [toast, setToast] = useState(null);
 
   // Form Settings state
   const [formTitle, setFormTitle] = useState('');
@@ -31,7 +33,7 @@ export default function AdminFormBuilder() {
 
   // Add / Edit Field Modal State
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
-  const [editingField, setEditingField] = useState(null); // null = add mode
+  const [editingField, setEditingField] = useState(null);
   const [fieldLabel, setFieldLabel] = useState('');
   const [fieldType, setFieldType] = useState('TEXT');
   const [fieldScope, setFieldScope] = useState('PARTICIPANT');
@@ -39,7 +41,6 @@ export default function AdminFormBuilder() {
   const [fieldPlaceholder, setFieldPlaceholder] = useState('');
   const [fieldDescription, setFieldDescription] = useState('');
   const [fieldOptionsText, setFieldOptionsText] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmittingField, setIsSubmittingField] = useState(false);
 
   // Delete Custom Field Confirm
@@ -49,9 +50,9 @@ export default function AdminFormBuilder() {
   // Form Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const showNotification = (type, message) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
   };
 
   const loadFormData = useCallback(async () => {
@@ -59,14 +60,16 @@ export default function AdminFormBuilder() {
       setLoading(true);
       const data = await formService.getForm(eventId);
       if (data) {
-        setEvent(data.event);
-        setForm(data.form);
-        setFields(data.form.fields || []);
-        setFormTitle(data.form.title);
-        setFormDescription(data.form.description || '');
+        setEvent(data.event || null);
+        setForm(data.form || null);
+        setFields(data.fields || []);
+        if (data.form) {
+          setFormTitle(data.form.title || '');
+          setFormDescription(data.form.description || '');
+        }
       }
     } catch (err) {
-      showNotification('error', err.message || 'Failed to load form builder.');
+      showToast('error', err.message || 'Failed to load form schema.');
     } finally {
       setLoading(false);
     }
@@ -81,13 +84,13 @@ export default function AdminFormBuilder() {
     try {
       setIsSavingSettings(true);
       await formService.updateFormSettings(eventId, {
-        title: formTitle,
-        description: formDescription,
+        title: formTitle.trim(),
+        description: formDescription.trim(),
       });
-      showNotification('success', 'Form settings saved successfully.');
+      showToast('success', 'Form settings saved.');
       await loadFormData();
     } catch (err) {
-      showNotification('error', err.message || 'Failed to save form settings.');
+      showToast('error', err.message || 'Failed to save form settings.');
     } finally {
       setIsSavingSettings(false);
     }
@@ -95,11 +98,11 @@ export default function AdminFormBuilder() {
 
   const handlePublishForm = async () => {
     try {
-      const updated = await formService.publishForm(eventId);
-      setForm(updated);
-      showNotification('success', `Form published successfully (Version ${updated.version}).`);
+      const res = await formService.publishForm(eventId);
+      showToast('success', `Form published (Version ${res.version}).`);
+      await loadFormData();
     } catch (err) {
-      showNotification('error', err.message || 'Failed to publish form.');
+      showToast('error', err.message || 'Failed to publish form.');
     }
   };
 
@@ -112,7 +115,6 @@ export default function AdminFormBuilder() {
     setFieldPlaceholder('');
     setFieldDescription('');
     setFieldOptionsText('');
-    setFieldErrors({});
     setIsFieldModalOpen(true);
   };
 
@@ -124,42 +126,37 @@ export default function AdminFormBuilder() {
     setFieldRequired(field.isRequired);
     setFieldPlaceholder(field.placeholder || '');
     setFieldDescription(field.description || '');
-    
+
     let opts = '';
-    if (Array.isArray(field.optionsJson)) {
-      opts = field.optionsJson.join('\n');
+    if (field.optionsJson) {
+      if (Array.isArray(field.optionsJson)) {
+        opts = field.optionsJson.join('\n');
+      } else if (typeof field.optionsJson === 'string') {
+        try {
+          const parsed = JSON.parse(field.optionsJson);
+          opts = Array.isArray(parsed) ? parsed.join('\n') : '';
+        } catch {
+          opts = '';
+        }
+      }
     }
     setFieldOptionsText(opts);
-    setFieldErrors({});
     setIsFieldModalOpen(true);
   };
 
-  const closeFieldModal = () => {
-    setIsFieldModalOpen(false);
-    setEditingField(null);
-    setFieldErrors({});
-  };
-
-  const handleFieldSubmit = async (e) => {
+  const handleSaveField = async (e) => {
     e.preventDefault();
-    setFieldErrors({});
-
-    const errors = {};
-    if (!fieldLabel.trim()) errors.label = 'Field label is required.';
-
-    let optionsArray = null;
-    if (fieldType === 'SELECT' || fieldType === 'RADIO') {
-      const lines = fieldOptionsText.split('\n').map((s) => s.trim()).filter(Boolean);
-      if (lines.length === 0) {
-        errors.options = `At least one option is required for ${fieldType} fields (one per line).`;
-      } else {
-        optionsArray = lines;
-      }
+    if (!fieldLabel.trim()) {
+      showToast('error', 'Field label is required.');
+      return;
     }
 
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
+    let parsedOptions = null;
+    if (['SELECT', 'RADIO', 'CHECKBOX'].includes(fieldType) && fieldOptionsText.trim()) {
+      parsedOptions = fieldOptionsText
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
 
     try {
@@ -169,24 +166,23 @@ export default function AdminFormBuilder() {
         fieldType,
         fieldScope,
         isRequired: fieldRequired,
-        placeholder: fieldPlaceholder.trim() || null,
-        description: fieldDescription.trim() || null,
-        optionsJson: optionsArray,
+        placeholder: fieldPlaceholder.trim() || undefined,
+        description: fieldDescription.trim() || undefined,
+        optionsJson: parsedOptions || undefined,
       };
 
       if (editingField) {
         await formService.updateField(eventId, editingField.id, payload);
-        showNotification('success', `Field "${payload.label}" updated.`);
+        showToast('success', `Field "${payload.label}" updated.`);
       } else {
         await formService.addField(eventId, payload);
-        showNotification('success', `Field "${payload.label}" added to form.`);
+        showToast('success', `Field "${payload.label}" added.`);
       }
 
-      closeFieldModal();
+      setIsFieldModalOpen(false);
       await loadFormData();
     } catch (err) {
-      showNotification('error', err.message || 'Failed to save field.');
-      if (err.errors) setFieldErrors(err.errors);
+      showToast('error', err.message || 'Failed to save form field.');
     } finally {
       setIsSubmittingField(false);
     }
@@ -197,11 +193,11 @@ export default function AdminFormBuilder() {
     try {
       setIsDeleting(true);
       await formService.deleteField(eventId, deleteTarget.id);
-      showNotification('success', `Field "${deleteTarget.label}" removed.`);
+      showToast('success', `Field "${deleteTarget.label}" removed.`);
       setDeleteTarget(null);
       await loadFormData();
     } catch (err) {
-      showNotification('error', err.message || 'Failed to delete field.');
+      showToast('error', err.message || 'Failed to delete field.');
     } finally {
       setIsDeleting(false);
     }
@@ -215,7 +211,6 @@ export default function AdminFormBuilder() {
     const [moved] = reordered.splice(index, 1);
     reordered.splice(targetIndex, 0, moved);
 
-    // Recompute display orders
     const fieldOrders = reordered.map((f, idx) => ({
       id: f.id,
       displayOrder: (idx + 1) * 10,
@@ -226,112 +221,93 @@ export default function AdminFormBuilder() {
     try {
       await formService.reorderFields(eventId, fieldOrders);
     } catch (err) {
-      showNotification('error', err.message || 'Failed to persist field order.');
+      showToast('error', 'Failed to persist field order.');
       await loadFormData();
     }
   };
 
   if (loading) {
     return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
-        Loading dynamic registration form builder...
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ad-text-muted)' }}>
+        Loading dynamic form builder...
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ maxWidth: '840px' }}>
+      <Toast toast={toast} />
+
+      {/* Page Header */}
+      <div className="admin-page-header">
         <div>
-          <Link to={`/admin/events/${eventId}`} style={{ color: '#818cf8', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-block', marginBottom: '0.5rem' }}>
-            ← Back to Event: {event?.title}
-          </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#fff', margin: 0 }}>
-              Registration Form Builder
-            </h1>
-            <span className={`admin-badge ${form?.status === 'PUBLISHED' ? 'admin-badge-active' : 'admin-badge-draft'}`}>
-              {form?.status || 'Draft'}
-            </span>
-            <span style={{ fontSize: '0.75rem', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-              v{form?.version || 1}
-            </span>
+          <div style={{ marginBottom: '0.35rem' }}>
+            <Link to={`/admin/events/${eventId}`} style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', textDecoration: 'none' }}>
+              ← Back to Event: {event?.title}
+            </Link>
           </div>
+          <h1 className="admin-page-title">
+            Form Builder — {event?.title}
+          </h1>
+          <p className="admin-page-subtitle">
+            Configure attendee registration fields, scopes, custom inputs, and dynamic form versioning.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setIsPreviewOpen(true)}
-            className="admin-btn admin-btn-secondary"
-          >
-            👁️ Preview Form
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <StatusBadge status={form?.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'} />
+          <button onClick={() => setIsPreviewOpen(true)} className="admin-btn admin-btn-secondary admin-btn-sm">
+            👁️ Preview
           </button>
-          <button
-            onClick={handlePublishForm}
-            className="admin-btn admin-btn-primary"
-          >
+          <button onClick={handlePublishForm} className="admin-btn admin-btn-primary admin-btn-sm">
             🚀 {form?.status === 'PUBLISHED' ? 'Re-Publish Form' : 'Publish Form'}
           </button>
         </div>
       </div>
 
-      {notification && (
-        <div className={`admin-alert ${notification.type === 'success' ? 'admin-alert-success' : 'admin-alert-danger'}`}>
-          {notification.message}
-        </div>
-      )}
-
-      {form?.status === 'PUBLISHED' && (
-        <div className="admin-card" style={{ background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '1rem', marginBottom: '1.5rem' }}>
-          <span style={{ color: '#facc15', fontSize: '0.875rem', fontWeight: 600 }}>
-            ⚠️ Active Form: This form is currently PUBLISHED. Any schema additions will automatically be required for future registrations.
-          </span>
-        </div>
-      )}
-
-      {/* Form Details Card */}
-      <div className="admin-card" style={{ marginBottom: '1.5rem' }}>
-        <h2 className="admin-card-title" style={{ marginBottom: '1rem' }}>Form Header & Instructions</h2>
-        <form onSubmit={handleSaveSettings}>
-          <div className="admin-grid-2">
+      {/* Form Details */}
+      <div className="admin-form-section">
+        <h3 className="admin-form-section-title">Form Header & Instructions</h3>
+        <form onSubmit={handleSaveSettings} style={{ marginTop: '0.75rem' }}>
+          <div className="admin-form-grid-2">
             <div className="admin-form-group">
-              <label className="admin-form-label">Form Title</label>
+              <label className="admin-label">Form Title</label>
               <input
                 type="text"
-                className="admin-form-input"
+                className="admin-input"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
                 required
               />
             </div>
+
             <div className="admin-form-group">
-              <label className="admin-form-label">Attendee Instructions / Subtitle</label>
+              <label className="admin-label">Attendee Instructions</label>
               <input
                 type="text"
-                className="admin-form-input"
+                className="admin-input"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Guidelines displayed above registration form..."
               />
             </div>
           </div>
-          <button
-            type="submit"
-            className="admin-btn admin-btn-secondary admin-btn-sm"
-            disabled={isSavingSettings}
-          >
-            {isSavingSettings ? 'Saving...' : 'Save Form Settings'}
-          </button>
+
+          <div style={{ marginTop: '0.75rem' }}>
+            <button type="submit" disabled={isSavingSettings} className="admin-btn admin-btn-secondary admin-btn-sm">
+              {isSavingSettings ? 'Saving...' : 'Save Header Settings'}
+            </button>
+          </div>
         </form>
       </div>
 
       {/* Form Fields Section */}
-      <div className="admin-card">
-        <div className="admin-card-header">
+      <div className="admin-form-section">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
           <div>
-            <h2 className="admin-card-title">Registration Fields ({fields.length})</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.8125rem', margin: '0.25rem 0 0 0' }}>
-              Includes fixed baseline participant identification fields plus custom event fields
+            <h3 className="admin-form-section-title">Registration Fields ({fields.length})</h3>
+            <p className="admin-form-section-desc" style={{ margin: 0 }}>
+              Fixed baseline participant fields + custom event-specific questions.
             </p>
           </div>
 
@@ -340,94 +316,77 @@ export default function AdminFormBuilder() {
           </button>
         </div>
 
-        <div className="admin-field-list">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
           {fields.map((field, idx) => (
             <div
               key={field.id}
-              className={`admin-field-card ${field.isFixed ? 'is-fixed' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--ad-radius-sm)',
+                border: '1px solid var(--ad-border-subtle)',
+                background: field.isFixed ? 'rgba(255,255,255,0.02)' : 'rgba(99, 102, 241, 0.04)',
+              }}
             >
-              {/* Order Controls */}
-              <div className="admin-field-order-controls">
-                <button
-                  type="button"
-                  className="admin-order-btn"
-                  onClick={() => handleMoveField(idx, -1)}
-                  disabled={idx === 0}
-                  title="Move Up"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  className="admin-order-btn"
-                  onClick={() => handleMoveField(idx, 1)}
-                  disabled={idx === fields.length - 1}
-                  title="Move Down"
-                >
-                  ▼
-                </button>
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => handleMoveField(idx, -1)}
+                    style={{ background: 'none', border: 'none', color: 'var(--ad-text-muted)', cursor: 'pointer', fontSize: '0.65rem', padding: 0 }}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    disabled={idx === fields.length - 1}
+                    onClick={() => handleMoveField(idx, 1)}
+                    style={{ background: 'none', border: 'none', color: 'var(--ad-text-muted)', cursor: 'pointer', fontSize: '0.65rem', padding: 0 }}
+                  >
+                    ▼
+                  </button>
+                </div>
 
-              {/* Field Info */}
-              <div className="admin-field-info">
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, color: '#fff' }}>{field.label}</span>
-                    {field.isRequired && (
-                      <span style={{ color: '#f87171', fontSize: '0.75rem', fontWeight: 700 }}>* REQUIRED</span>
-                    )}
+                  <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--ad-text-primary)' }}>
+                    {field.label} {field.isRequired && <span style={{ color: 'var(--ad-danger-text)' }}>*</span>}
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)', display: 'flex', gap: '0.5rem' }}>
+                    <span>Type: {field.fieldType}</span>
+                    <span>•</span>
+                    <span>Scope: {field.fieldScope}</span>
                     {field.isFixed && (
-                      <span style={{ fontSize: '0.6875rem', background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
-                        Fixed Baseline
-                      </span>
+                      <>
+                        <span>•</span>
+                        <span style={{ color: 'var(--ad-accent)' }}>Baseline</span>
+                      </>
                     )}
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
-                    <span className={`admin-badge-scope ${field.fieldScope === 'PARTICIPANT' ? 'admin-badge-scope-participant' : 'admin-badge-scope-registration'}`}>
-                      {field.fieldScope} LEVEL
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      Type: <strong style={{ color: '#e2e8f0' }}>{field.fieldType}</strong>
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      Key: <code>{field.fieldKey}</code>
-                    </span>
-                  </div>
-
-                  {field.description && (
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                      {field.description}
-                    </div>
-                  )}
-
-                  {Array.isArray(field.optionsJson) && field.optionsJson.length > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#818cf8', marginTop: '0.25rem' }}>
-                      Options: {field.optionsJson.join(' • ')}
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="admin-actions-cell">
-                <button
-                  onClick={() => openEditFieldModal(field)}
-                  className="admin-btn admin-btn-secondary admin-btn-sm"
-                >
-                  Edit
-                </button>
-
-                {!field.isFixed ? (
-                  <button
-                    onClick={() => setDeleteTarget(field)}
-                    className="admin-btn admin-btn-danger admin-btn-sm"
-                  >
-                    Delete
-                  </button>
-                ) : (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', padding: '0.3rem 0.5rem' }}>
-                    Permanent
+              <div style={{ display: 'flex', gap: '0.35rem' }}>
+                {!field.isFixed && (
+                  <>
+                    <button
+                      onClick={() => openEditFieldModal(field)}
+                      className="admin-btn admin-btn-ghost admin-btn-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(field)}
+                      className="admin-btn admin-btn-ghost admin-btn-sm"
+                      style={{ color: 'var(--ad-danger-text)' }}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+                {field.isFixed && (
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--ad-text-dim)', padding: '0.2rem 0.5rem' }}>
+                    Fixed System Field
                   </span>
                 )}
               </div>
@@ -436,44 +395,38 @@ export default function AdminFormBuilder() {
         </div>
       </div>
 
-      {/* Add / Edit Field Modal */}
+      {/* ADD / EDIT FIELD MODAL */}
       {isFieldModalOpen && (
-        <div className="admin-modal-backdrop" onClick={closeFieldModal}>
-          <div className="admin-modal" style={{ maxWidth: '580px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
             <div className="admin-modal-header">
               <h3 className="admin-modal-title">
-                {editingField ? (editingField.isFixed ? 'Edit Baseline Field' : 'Edit Custom Field') : 'Add Custom Registration Field'}
+                {editingField ? `Edit Field — ${editingField.label}` : 'Add Custom Registration Field'}
               </h3>
-              <button className="admin-modal-close" onClick={closeFieldModal}>×</button>
+              <button onClick={() => setIsFieldModalOpen(false)} className="admin-modal-close">×</button>
             </div>
 
-            <form onSubmit={handleFieldSubmit}>
+            <form onSubmit={handleSaveField}>
               <div className="admin-modal-body">
                 <div className="admin-form-group">
-                  <label className="admin-form-label" htmlFor="field-lbl">
-                    Field Label *
-                  </label>
+                  <label className="admin-label">Field Label *</label>
                   <input
-                    id="field-lbl"
                     type="text"
-                    className="admin-form-input"
-                    placeholder="e.g. Year of Study, GitHub Repo, Food Preference"
+                    className="admin-input"
+                    placeholder="e.g. GitHub Repository URL or T-Shirt Size"
                     value={fieldLabel}
                     onChange={(e) => setFieldLabel(e.target.value)}
                     required
-                    autoFocus
                   />
-                  {fieldErrors.label && <div className="admin-form-error">{fieldErrors.label}</div>}
                 </div>
 
-                <div className="admin-grid-2">
+                <div className="admin-form-grid-2">
                   <div className="admin-form-group">
-                    <label className="admin-form-label">Field Type *</label>
+                    <label className="admin-label">Field Type</label>
                     <select
-                      className="admin-form-select"
+                      className="admin-select"
                       value={fieldType}
                       onChange={(e) => setFieldType(e.target.value)}
-                      disabled={editingField?.isFixed}
                     >
                       {FIELD_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
@@ -484,94 +437,60 @@ export default function AdminFormBuilder() {
                   </div>
 
                   <div className="admin-form-group">
-                    <label className="admin-form-label">Field Scope *</label>
+                    <label className="admin-label">Field Scope</label>
                     <select
-                      className="admin-form-select"
+                      className="admin-select"
                       value={fieldScope}
                       onChange={(e) => setFieldScope(e.target.value)}
-                      disabled={editingField?.isFixed}
                     >
-                      <option value="PARTICIPANT">Participant Level (Per member)</option>
-                      <option value="REGISTRATION">Registration Level (Once per team/submission)</option>
+                      <option value="PARTICIPANT">PARTICIPANT (Every team member)</option>
+                      <option value="REGISTRATION">REGISTRATION (Once per submission)</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label" htmlFor="field-ph">
-                    Placeholder (Optional)
-                  </label>
+                  <label className="admin-label">Placeholder (Optional)</label>
                   <input
-                    id="field-ph"
                     type="text"
-                    className="admin-form-input"
-                    placeholder="Sample placeholder text inside the input"
+                    className="admin-input"
+                    placeholder="Example response text..."
                     value={fieldPlaceholder}
                     onChange={(e) => setFieldPlaceholder(e.target.value)}
                   />
                 </div>
 
-                <div className="admin-form-group">
-                  <label className="admin-form-label" htmlFor="field-desc">
-                    Helper Description (Optional)
-                  </label>
-                  <input
-                    id="field-desc"
-                    type="text"
-                    className="admin-form-input"
-                    placeholder="Sub-label instructions shown below the input"
-                    value={fieldDescription}
-                    onChange={(e) => setFieldDescription(e.target.value)}
-                  />
-                </div>
-
-                {/* Options list for SELECT & RADIO */}
-                {(fieldType === 'SELECT' || fieldType === 'RADIO') && (
-                  <div className="admin-form-group" style={{ padding: '0.85rem', background: 'var(--admin-bg-elevated)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)' }}>
-                    <label className="admin-form-label">
-                      Options (Enter one option per line) *
-                    </label>
+                {['SELECT', 'RADIO', 'CHECKBOX'].includes(fieldType) && (
+                  <div className="admin-form-group">
+                    <label className="admin-label">Options (One per line)</label>
                     <textarea
-                      rows="4"
-                      className="admin-form-textarea"
-                      placeholder={'1st Year\n2nd Year\n3rd Year\n4th Year'}
+                      className="admin-textarea"
+                      rows="3"
+                      placeholder="Option 1&#10;Option 2&#10;Option 3"
                       value={fieldOptionsText}
                       onChange={(e) => setFieldOptionsText(e.target.value)}
-                      required
                     />
-                    {fieldErrors.options && <div className="admin-form-error">{fieldErrors.options}</div>}
                   </div>
                 )}
 
-                <div className="admin-form-group">
-                  <label className="admin-checkbox-label">
+                <div className="admin-form-group" style={{ marginTop: '0.5rem' }}>
+                  <label className="admin-checkbox-item">
                     <input
                       type="checkbox"
-                      className="admin-checkbox"
                       checked={fieldRequired}
                       onChange={(e) => setFieldRequired(e.target.checked)}
-                      disabled={editingField?.isFixed}
                     />
-                    <span>Required Field (Attendee must fill this before submitting)</span>
+                    <span>Required Field (Participant cannot submit without filling)</span>
                   </label>
                 </div>
               </div>
 
               <div className="admin-modal-footer">
-                <button
-                  type="button"
-                  className="admin-btn admin-btn-secondary"
-                  onClick={closeFieldModal}
-                  disabled={isSubmittingField}
-                >
+                <button type="button" onClick={() => setIsFieldModalOpen(false)} className="admin-btn admin-btn-secondary admin-btn-sm">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="admin-btn admin-btn-primary"
-                  disabled={isSubmittingField}
-                >
-                  {isSubmittingField ? 'Saving...' : (editingField ? 'Update Field' : 'Add Field')}
+                <button type="submit" disabled={isSubmittingField} className="admin-btn admin-btn-primary admin-btn-sm">
+                  {isSubmittingField ? 'Saving...' : editingField ? 'Save Field' : 'Add Field'}
                 </button>
               </div>
             </form>
@@ -579,146 +498,71 @@ export default function AdminFormBuilder() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* DELETE CONFIRM MODAL */}
       {deleteTarget && (
-        <div className="admin-modal-backdrop" onClick={() => setDeleteTarget(null)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
             <div className="admin-modal-header">
-              <h3 className="admin-modal-title" style={{ color: '#f87171' }}>
-                Delete Form Field
-              </h3>
-              <button className="admin-modal-close" onClick={() => setDeleteTarget(null)}>×</button>
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>Remove Field</h3>
+              <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
             </div>
             <div className="admin-modal-body">
-              <p style={{ color: '#f1f5f9', margin: '0 0 1rem 0' }}>
-                Are you sure you want to remove the field <strong>"{deleteTarget.label}"</strong>?
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to remove <strong>{deleteTarget.label}</strong>?
               </p>
-              <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>
-                This custom field will no longer appear on the registration form for {event?.title}.
+              <p style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', margin: 0 }}>
+                This will exclude the field from future registration submissions.
               </p>
             </div>
             <div className="admin-modal-footer">
-              <button
-                className="admin-btn admin-btn-secondary"
-                onClick={() => setDeleteTarget(null)}
-                disabled={isDeleting}
-              >
+              <button type="button" onClick={() => setDeleteTarget(null)} className="admin-btn admin-btn-secondary admin-btn-sm">
                 Cancel
               </button>
-              <button
-                className="admin-btn admin-btn-danger"
-                onClick={handleDeleteField}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Field'}
+              <button type="button" disabled={isDeleting} onClick={handleDeleteField} className="admin-btn admin-btn-danger admin-btn-sm">
+                {isDeleting ? 'Deleting...' : 'Confirm Remove'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Dynamic Form Preview Modal */}
+      {/* PREVIEW MODAL */}
       {isPreviewOpen && (
-        <div className="admin-modal-backdrop" onClick={() => setIsPreviewOpen(false)}>
-          <div className="admin-modal" style={{ maxWidth: '680px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-overlay">
+          <div className="admin-modal admin-modal-lg">
             <div className="admin-modal-header">
-              <div>
-                <h3 className="admin-modal-title">Registration Form Preview</h3>
-                <span style={{ fontSize: '0.75rem', color: '#818cf8' }}>{event?.title} • Dynamic Preview</span>
-              </div>
-              <button className="admin-modal-close" onClick={() => setIsPreviewOpen(false)}>×</button>
+              <h3 className="admin-modal-title">Live Form Preview — {formTitle || event?.title}</h3>
+              <button onClick={() => setIsPreviewOpen(false)} className="admin-modal-close">×</button>
             </div>
+            <div className="admin-modal-body">
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: '0 0 1.25rem 0' }}>
+                {formDescription || 'Please fill in the required participant details below.'}
+              </p>
 
-            <div className="admin-modal-body admin-preview-container">
-              <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', margin: '0 0 0.25rem 0' }}>
-                  {formTitle || `${event?.title} Registration`}
-                </h2>
-                <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>
-                  {formDescription}
-                </p>
-              </div>
-
-              {/* Registration-Level Fields */}
-              {fields.some((f) => f.fieldScope === 'REGISTRATION') && (
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--admin-bg-surface)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)' }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#c084fc', margin: '0 0 1rem 0', textTransform: 'uppercase' }}>
-                    Team / Submission Information
-                  </h4>
-                  {fields.filter((f) => f.fieldScope === 'REGISTRATION').map((f) => (
-                    <div key={f.id} className="admin-form-group">
-                      <label className="admin-form-label">
-                        {f.label} {f.isRequired && <span style={{ color: '#f87171' }}>*</span>}
-                      </label>
-                      {f.fieldType === 'TEXTAREA' ? (
-                        <textarea rows="3" className="admin-form-textarea" placeholder={f.placeholder || ''} disabled />
-                      ) : f.fieldType === 'SELECT' ? (
-                        <select className="admin-form-select" disabled>
-                          <option>Select an option...</option>
-                          {f.optionsJson?.map((opt, i) => <option key={i}>{opt}</option>)}
-                        </select>
-                      ) : f.fieldType === 'RADIO' ? (
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                          {f.optionsJson?.map((opt, i) => (
-                            <label key={i} className="admin-checkbox-label">
-                              <input type="radio" disabled />
-                              <span>{opt}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <input type="text" className="admin-form-input" placeholder={f.placeholder || ''} disabled />
-                      )}
-                      {f.description && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>{f.description}</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Participant-Level Fields */}
-              <div style={{ padding: '1rem', background: 'var(--admin-bg-surface)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)' }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#38bdf8', margin: '0 0 1rem 0', textTransform: 'uppercase' }}>
-                  Participant Details {event?.registrationType === 'TEAM' && '(Lead / Member 1)'}
-                </h4>
-
-                {fields.filter((f) => f.fieldScope === 'PARTICIPANT').map((f) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {fields.map((f) => (
                   <div key={f.id} className="admin-form-group">
-                    <label className="admin-form-label">
-                      {f.label} {f.isRequired && <span style={{ color: '#f87171' }}>*</span>}
+                    <label className="admin-label">
+                      {f.label} {f.isRequired && <span style={{ color: 'var(--ad-danger-text)' }}>*</span>}
                     </label>
                     {f.fieldType === 'TEXTAREA' ? (
-                      <textarea rows="3" className="admin-form-textarea" placeholder={f.placeholder || ''} disabled />
+                      <textarea className="admin-textarea" rows="2" placeholder={f.placeholder || ''} disabled />
                     ) : f.fieldType === 'SELECT' ? (
-                      <select className="admin-form-select" disabled>
+                      <select className="admin-select" disabled>
                         <option>Select an option...</option>
-                        {f.optionsJson?.map((opt, i) => <option key={i}>{opt}</option>)}
-                      </select>
-                    ) : f.fieldType === 'RADIO' ? (
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        {f.optionsJson?.map((opt, i) => (
-                          <label key={i} className="admin-checkbox-label">
-                            <input type="radio" disabled />
-                            <span>{opt}</span>
-                          </label>
+                        {Array.isArray(f.optionsJson) && f.optionsJson.map((opt, i) => (
+                          <option key={i}>{opt}</option>
                         ))}
-                      </div>
+                      </select>
                     ) : (
-                      <input type="text" className="admin-form-input" placeholder={f.placeholder || ''} disabled />
+                      <input type={f.fieldType === 'EMAIL' ? 'email' : f.fieldType === 'NUMBER' ? 'number' : 'text'} className="admin-input" placeholder={f.placeholder || ''} disabled />
                     )}
-                    {f.description && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>{f.description}</div>}
                   </div>
                 ))}
               </div>
-
-              <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                <button type="button" className="admin-btn admin-btn-primary admin-btn-full" disabled>
-                  Submit Registration (Disabled in Preview)
-                </button>
-              </div>
             </div>
-
             <div className="admin-modal-footer">
-              <button className="admin-btn admin-btn-secondary" onClick={() => setIsPreviewOpen(false)}>
+              <button type="button" onClick={() => setIsPreviewOpen(false)} className="admin-btn admin-btn-secondary admin-btn-sm">
                 Close Preview
               </button>
             </div>

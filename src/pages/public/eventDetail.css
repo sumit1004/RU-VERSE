@@ -1,0 +1,411 @@
+/* ==========================================================================
+   RUVERSE 2026 — PUBLIC EVENT DETAIL EDITORIAL SYSTEM
+   Cinematic Dark Space Aesthetic with Electric Indigo / Cyan Accents
+   ========================================================================== */
+
+.public-event-detail-page {
+  min-height: 100vh;
+  background-color: #060911;
+  background-image: 
+    radial-gradient(circle at 50% -10%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 10% 40%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  padding: 2.5rem 1.25rem 5rem;
+  box-sizing: border-box;
+}
+
+.event-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* 1. Top Navigation & Breadcrumb Bar */
+.event-detail-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.event-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a5b4fc;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.5rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-back-btn:hover {
+  background: rgba(99, 102, 241, 0.12);
+  color: #ffffff;
+  border-color: rgba(99, 102, 241, 0.35);
+  transform: translateX(-2px);
+}
+
+.event-brand-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* 2. Hero Header Card */
+.event-hero-card {
+  background: #0d121f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2.5rem 2.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.event-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1 0%, #38bdf8 50%, #8b5cf6 100%);
+}
+
+.event-hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.event-category-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+}
+
+.event-featured-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+}
+
+.event-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.event-status-badge.is-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.event-status-badge.is-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.event-status-badge.is-danger {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fb7185;
+  border-color: rgba(251, 113, 133, 0.3);
+}
+
+.event-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.event-status-badge.is-success .event-status-dot {
+  box-shadow: 0 0 8px #10b981;
+}
+
+.event-status-badge.is-warning .event-status-dot {
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.event-status-badge.is-danger .event-status-dot {
+  box-shadow: 0 0 8px #f43f5e;
+}
+
+.event-hero-title {
+  font-size: 2.35rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin: 0 0 0.85rem 0;
+  line-height: 1.15;
+  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.event-hero-tagline {
+  font-size: 1.125rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0 0 1.75rem 0;
+  max-width: 720px;
+}
+
+/* 3. Core Specification Matrix */
+.event-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.85rem;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.event-spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.event-spec-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.event-spec-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* 4. Editorial Content Sections */
+.event-editorial-section {
+  background: #0d121f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.event-section-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 1.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.event-section-heading::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: #6366f1;
+  border-radius: 2px;
+}
+
+.event-description-body {
+  color: #cbd5e1;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+/* Key-Value Details Grid */
+.event-details-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.event-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.event-detail-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.event-detail-val {
+  font-size: 0.875rem;
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+/* 5. Registration Action Console */
+.event-reg-console {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(13, 18, 31, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 15px 40px rgba(99, 102, 241, 0.15), 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.event-reg-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.event-reg-status-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.event-reg-status-desc {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.event-reg-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.event-reg-cta-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.6);
+  transform: translateY(-2px);
+}
+
+.event-reg-cta-btn:disabled,
+.event-reg-cta-btn.is-disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: #64748b;
+  border-color: rgba(255, 255, 255, 0.08);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* 6. Loading & Error States */
+.event-detail-loading-box {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.event-detail-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: event-spinner 0.8s linear infinite;
+}
+
+@keyframes event-spinner {
+  to { transform: rotate(360deg); }
+}
+
+.event-detail-error-card {
+  background: #0d121f;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  max-width: 540px;
+  margin: 5rem auto 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .public-event-detail-page {
+    padding: 1.5rem 1rem 4rem;
+  }
+  .event-hero-card {
+    padding: 1.75rem 1.25rem;
+  }
+  .event-hero-title {
+    font-size: 1.75rem;
+  }
+  .event-editorial-section {
+    padding: 1.5rem 1.25rem;
+  }
+  .event-reg-console {
+    padding: 1.5rem 1.25rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .event-reg-cta-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

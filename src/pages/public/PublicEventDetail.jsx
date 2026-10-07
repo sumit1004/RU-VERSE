@@ -1,181 +1,268 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { eventService } from '../../services/eventService';
-import '../../styles/admin.css';
+import {
+  formatISTDate,
+  formatISTTime,
+  formatISTDateTime,
+  formatDateRange,
+  formatTimeRange,
+  getRegistrationStatus,
+} from '../../utils/eventDateTime';
+import './eventDetail.css';
 
 export default function PublicEventDetail() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showRegModal, setShowRegModal] = useState(false);
+
+  const loadEvent = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await eventService.getPublicEventBySlug(slug);
+      if (!data) {
+        setError('Event not found or is currently not published for public access.');
+      } else {
+        setEvent(data);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load event details. Please check your network connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadEvent() {
-      try {
-        setLoading(true);
-        const data = await eventService.getPublicEventBySlug(slug);
-        if (!data) {
-          setError('Event not found or registration is currently unavailable.');
-        } else {
-          setEvent(data);
-        }
-      } catch (err) {
-        setError(err.message || 'Failed to load event details.');
-      } finally {
-        setLoading(false);
-      }
-    }
     loadEvent();
   }, [slug]);
 
+  // SPA navigation back to homepage events section without full reload
+  const handleBackToHome = (e) => {
+    e.preventDefault();
+    // Mark session so intro/gate is bypassed
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('ruverse_entered', 'true');
+    }
+    navigate('/', {
+      state: { targetSection: 'events', fromPublicDetail: true },
+    });
+  };
+
+  // 1. Loading Skeleton State
   if (loading) {
     return (
-      <div className="admin-scope" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0d14' }}>
-        <div style={{ textAlign: 'center', color: '#94a3b8' }}>Loading event details...</div>
+      <div className="public-event-detail-page">
+        <div className="event-detail-container">
+          <div className="event-detail-loading-box">
+            <div className="event-detail-spinner" />
+            <span style={{ fontSize: '0.875rem', letterSpacing: '0.08em', color: '#94a3b8', fontFamily: 'monospace' }}>
+              RETRIEVING EVENT PROFILE // RUVERSE 2026...
+            </span>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // 2. Error State
   if (error || !event) {
     return (
-      <div className="admin-scope" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', background: '#0a0d14' }}>
-        <h1 style={{ color: '#f87171', fontSize: '1.75rem', marginBottom: '1rem' }}>Event Unavailable</h1>
-        <p style={{ color: '#94a3b8', maxWidth: '480px', marginBottom: '2rem' }}>{error}</p>
-        <Link to="/" className="admin-btn admin-btn-primary">
-          ← Return to RUVERSE Home
-        </Link>
+      <div className="public-event-detail-page">
+        <div className="event-detail-container">
+          <div className="event-detail-error-card">
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
+            <h2 style={{ color: '#fb7185', fontSize: '1.5rem', marginBottom: '0.75rem', fontWeight: 800 }}>
+              Event Unavailable
+            </h2>
+            <p style={{ color: '#94a3b8', lineHeight: 1.6, marginBottom: '2rem', fontSize: '0.9375rem' }}>
+              {error || 'The requested event could not be located in the festival manifest.'}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={loadEvent} className="event-reg-cta-btn" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}>
+                ↻ Try Again
+              </button>
+              <button onClick={handleBackToHome} className="event-back-btn" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}>
+                ← Return to RUVERSE Home
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="admin-scope" style={{ minHeight: '100vh', background: 'radial-gradient(circle at top center, #1e1b4b 0%, #0a0d14 70%)', padding: '3rem 1.5rem' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <Link to="/" style={{ color: '#818cf8', textDecoration: 'none', display: 'inline-block', marginBottom: '1.5rem', fontWeight: 600 }}>
-          ← Back to RUVERSE 2026 Home
-        </Link>
+  // Calculate authoritative registration availability status
+  const statusInfo = getRegistrationStatus(event);
 
-        <div className="admin-card" style={{ background: '#111726', padding: '2.5rem 2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.8125rem', color: '#6366f1', background: 'rgba(99, 102, 241, 0.12)', padding: '0.25rem 0.75rem', borderRadius: '999px', fontWeight: 700, textTransform: 'uppercase' }}>
-              {event.category?.name}
-            </span>
-            {event.isFeatured && (
-              <span style={{ fontSize: '0.8125rem', color: '#facc15', background: 'rgba(234, 179, 8, 0.15)', padding: '0.25rem 0.75rem', borderRadius: '999px', fontWeight: 700 }}>
-                ★ FEATURED EVENT
-              </span>
+  // Formatted date and time strings
+  const formattedDates = formatDateRange(event.startDateTime, event.endDateTime);
+  const formattedTimes = formatTimeRange(event.startDateTime, event.endDateTime);
+  const registrationTypeLabel =
+    event.registrationType === 'TEAM'
+      ? `Team · ${event.teamMinSize || 2}–${event.teamMaxSize || 4} Members`
+      : event.registrationType === 'BOTH'
+      ? `Individual / Team (${event.teamMinSize || 2}–${event.teamMaxSize || 4})`
+      : 'Individual Entry';
+
+  return (
+    <div className="public-event-detail-page">
+      <div className="event-detail-container">
+        {/* 1. Top Navigation Bar */}
+        <div className="event-detail-top-nav">
+          <button onClick={handleBackToHome} className="event-back-btn" aria-label="Return to RUVERSE 2026 Home">
+            <span>← Back to RUVERSE 2026</span>
+          </button>
+          <span className="event-brand-indicator">RUVERSE 2026 // EVENT MANIFEST</span>
+        </div>
+
+        {/* 2. Hero Header Card */}
+        <div className="event-hero-card">
+          <div className="event-hero-meta-row">
+            {event.category?.name && (
+              <span className="event-category-chip">{event.category.name}</span>
             )}
-            <span className={`admin-badge admin-badge-${event.registrationStatus.toLowerCase()}`}>
-              {event.registrationStatus}
+            {event.isFeatured && (
+              <span className="event-featured-chip">★ FEATURED ARENA</span>
+            )}
+            <span className={`event-status-badge is-${statusInfo.badgeClass}`}>
+              <span className="event-status-dot" />
+              <span>{statusInfo.badgeText}</span>
             </span>
           </div>
 
-          <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#fff', margin: '0 0 1rem 0', lineHeight: 1.2 }}>
-            {event.title}
-          </h1>
+          <h1 className="event-hero-title">{event.title}</h1>
 
           {event.shortDescription && (
-            <p style={{ color: '#cbd5e1', fontSize: '1.125rem', margin: '0 0 1.75rem 0', lineHeight: 1.6 }}>
-              {event.shortDescription}
-            </p>
+            <p className="event-hero-tagline">{event.shortDescription}</p>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)', marginBottom: '2rem' }}>
-            <div>
-              <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700 }}>Venue</div>
-              <div style={{ color: '#fff', fontWeight: 600, marginTop: '0.25rem' }}>📍 {event.venue}</div>
+          {/* Core Specification Grid */}
+          <div className="event-specs-grid">
+            <div className="event-spec-item">
+              <span className="event-spec-label">Venue</span>
+              <span className="event-spec-value">📍 {event.venue || 'TBD'}</span>
             </div>
 
-            <div>
-              <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700 }}>Event Date</div>
-              <div style={{ color: '#fff', fontWeight: 600, marginTop: '0.25rem' }}>
-                📅 {new Date(event.startDateTime).toLocaleDateString()}
-              </div>
+            <div className="event-spec-item">
+              <span className="event-spec-label">Date</span>
+              <span className="event-spec-value">📅 {formattedDates || 'FEB 2026'}</span>
             </div>
 
-            <div>
-              <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700 }}>Registration Type</div>
-              <div style={{ color: '#fff', fontWeight: 600, marginTop: '0.25rem' }}>
-                {event.registrationType}
-                {event.teamMinSize && ` (${event.teamMinSize}-${event.teamMaxSize} members)`}
+            {formattedTimes && (
+              <div className="event-spec-item">
+                <span className="event-spec-label">Time</span>
+                <span className="event-spec-value">⏰ {formattedTimes}</span>
               </div>
+            )}
+
+            <div className="event-spec-item">
+              <span className="event-spec-label">Registration</span>
+              <span className="event-spec-value">👥 {registrationTypeLabel}</span>
+            </div>
+
+            {event.registrationLimit && (
+              <div className="event-spec-item">
+                <span className="event-spec-label">Capacity</span>
+                <span className="event-spec-value">🎟️ {event.registrationLimit} Slots Max</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3. About This Event */}
+        <div className="event-editorial-section">
+          <h2 className="event-section-heading">About This Event</h2>
+          <div className="event-description-body">
+            {event.description || 'Full event specifications and briefing will be announced shortly.'}
+          </div>
+        </div>
+
+        {/* 4. Event Information Parameters */}
+        <div className="event-editorial-section">
+          <h2 className="event-section-heading">Event Details & Schedule</h2>
+          <div className="event-details-table">
+            <div className="event-detail-row">
+              <span className="event-detail-label">Location / Arena</span>
+              <span className="event-detail-val">{event.venue || 'Campus Arena'}</span>
+            </div>
+
+            {event.startDateTime && (
+              <div className="event-detail-row">
+                <span className="event-detail-label">Event Starts</span>
+                <span className="event-detail-val">{formatISTDateTime(event.startDateTime)} (IST)</span>
+              </div>
+            )}
+
+            {event.endDateTime && (
+              <div className="event-detail-row">
+                <span className="event-detail-label">Event Ends</span>
+                <span className="event-detail-val">{formatISTDateTime(event.endDateTime)} (IST)</span>
+              </div>
+            )}
+
+            {event.registrationStart && (
+              <div className="event-detail-row">
+                <span className="event-detail-label">Registration Window Opens</span>
+                <span className="event-detail-val">{formatISTDateTime(event.registrationStart)} (IST)</span>
+              </div>
+            )}
+
+            {event.registrationEnd && (
+              <div className="event-detail-row">
+                <span className="event-detail-label">Registration Deadline</span>
+                <span className="event-detail-val">{formatISTDateTime(event.registrationEnd)} (IST)</span>
+              </div>
+            )}
+
+            <div className="event-detail-row">
+              <span className="event-detail-label">Participation Eligibility</span>
+              <span className="event-detail-val">
+                {event.isOpenForAll !== false ? 'Open to All College & University Students' : 'Restricted Eligibility Arena'}
+              </span>
+            </div>
+
+            <div className="event-detail-row">
+              <span className="event-detail-label">Registration Mode</span>
+              <span className="event-detail-val">
+                {event.registrationMode === 'EXTERNAL' ? 'External Registration' : 'RUVERSE Official Direct Portal'}
+              </span>
             </div>
           </div>
+        </div>
 
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-              About This Event
-            </h3>
-            <div style={{ color: '#94a3b8', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
-              {event.description}
-            </div>
+        {/* 5. Registration Action Console */}
+        <div className="event-reg-console">
+          <div className="event-reg-info">
+            <h3 className="event-reg-status-title">{statusInfo.headline}</h3>
+            <p className="event-reg-status-desc">{statusInfo.message}</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'var(--admin-bg-elevated)', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border-subtle)', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Registration Deadline</div>
-              <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.9375rem' }}>
-                {new Date(event.registrationEnd).toLocaleString()}
-              </div>
-            </div>
-
+          <div>
             {event.registrationMode === 'EXTERNAL' && event.registrationLink ? (
               <a
                 href={event.registrationLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="admin-btn admin-btn-primary"
-                style={{ textDecoration: 'none' }}
+                className="event-reg-cta-btn"
               >
-                Register via External Form ↗
+                Register via External Portal ↗
               </a>
-            ) : (
-              <Link
-                to={`/events/${event.slug}/register`}
-                className="admin-btn admin-btn-primary"
-                style={{
-                  textDecoration: 'none',
-                  pointerEvents: event.registrationStatus !== 'OPEN' ? 'none' : 'auto',
-                  opacity: event.registrationStatus !== 'OPEN' ? 0.6 : 1,
-                }}
-              >
-                {event.registrationStatus === 'OPEN'
-                  ? 'Register Now 🚀'
-                  : event.registrationStatus === 'UPCOMING'
-                  ? 'Registration Opening Soon'
-                  : 'Registration Closed'}
+            ) : statusInfo.canRegister ? (
+              <Link to={`/events/${event.slug}/register`} className="event-reg-cta-btn">
+                {statusInfo.buttonLabel}
               </Link>
+            ) : (
+              <button disabled className="event-reg-cta-btn is-disabled" title={statusInfo.message}>
+                {statusInfo.buttonLabel}
+              </button>
             )}
           </div>
         </div>
       </div>
-
-      {/* Controlled Notice for Registration Modal */}
-      {showRegModal && (
-        <div className="admin-modal-backdrop" onClick={() => setShowRegModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header">
-              <h3 className="admin-modal-title">Registration System</h3>
-              <button className="admin-modal-close" onClick={() => setShowRegModal(false)}>×</button>
-            </div>
-            <div className="admin-modal-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
-              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '1rem' }}>⚡</span>
-              <h4 style={{ color: '#fff', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
-                Dynamic Registration System Ready
-              </h4>
-              <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
-                The event registration form schema for <strong>{event.title}</strong> has been configured by festival administrators. Public attendee submissions will be live in Phase 5.
-              </p>
-            </div>
-            <div className="admin-modal-footer">
-              <button className="admin-btn admin-btn-secondary" onClick={() => setShowRegModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
