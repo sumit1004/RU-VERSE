@@ -583,10 +583,12 @@ button {
     transform: translateY(0);
     opacity: 1;
   }
+
   60% {
     transform: translateY(11px);
     opacity: 0.15;
   }
+
   100% {
     transform: translateY(0);
     opacity: 0;
@@ -631,10 +633,13 @@ button {
 }
 
 @keyframes chevronFade {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
     opacity: 0.3;
   }
+
   50% {
     transform: translateY(4px);
     opacity: 1;
@@ -793,11 +798,21 @@ button {
 }
 
 /* ==========================================================================
+   Sector 01: About RU (RU-Verse) Editorial Layout
+   (Positions in open space right of the HUD / around 3D model)
+   ========================================================================== */
+.ru-verse-editorial {
+  top: 60vh;
+  right: 6vw;
+  max-width: min(560px, 46vw);
+}
+
+/* ==========================================================================
    Sector 02: About RUVERSE Editorial Layout
    (Positions in the open center-left space below the ship and left of the HUD)
    ========================================================================== */
 .about-editorial {
-  top: 18vh;
+  top: 30vh;
   left: 6vw;
   max-width: min(560px, 46vw);
 }
@@ -957,10 +972,8 @@ button {
   flex-direction: column;
   gap: 14px;
   /* GPU-accelerated smooth interpolation toward viewport center */
-  transform: translate(
-    calc(var(--center-progress, 0) * (50vw - 6vw - 50%)),
-    calc(var(--center-progress, 0) * 16vh)
-  );
+  transform: translate(calc(var(--center-progress, 0) * (50vw - 6vw - 50%)),
+      calc(var(--center-progress, 0) * 16vh));
   transform-origin: center center;
   transition: transform 0.05s linear;
 }

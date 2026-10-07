@@ -35,6 +35,10 @@ export default function AdminRegistrations() {
   const [statusNotes, setStatusNotes] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Delete Registration Modal
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingReg, setDeletingReg] = useState(false);
+
   const canEdit = hasPermission('registrations.edit') || isAdmin;
   const canExport = hasPermission('registrations.export') || isAdmin;
 
@@ -164,6 +168,26 @@ export default function AdminRegistrations() {
     }
   };
 
+  // Delete Registration
+  const handleDeleteRegistration = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeletingReg(true);
+      await registrationService.deleteRegistration(deleteTarget.id);
+      showToast('success', `Registration ${deleteTarget.registrationNumber} deleted successfully.`);
+      setDeleteTarget(null);
+      if (registrations.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        loadRegistrations();
+      }
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete registration.');
+    } finally {
+      setDeletingReg(false);
+    }
+  };
+
   return (
     <div>
       <Toast toast={toast} />
@@ -218,7 +242,7 @@ export default function AdminRegistrations() {
         <div className="admin-event-workspace-bar">
           <div className="admin-event-workspace-info">
             <div className="admin-event-workspace-title">
-              📍 {selectedEventObj.title}
+              {selectedEventObj.title}
             </div>
             <div className="admin-event-workspace-meta">
               Venue: {selectedEventObj.venue || 'Main Campus'} • Type: {selectedEventObj.registrationType} • Capacity: {selectedEventObj.registrationLimit || 'Unlimited'}
@@ -241,7 +265,6 @@ export default function AdminRegistrations() {
         <div className="admin-toolbar-left">
           {/* Search Input */}
           <div className="admin-search-wrapper">
-            <span className="admin-search-icon">🔍</span>
             <input
               type="text"
               className="admin-input admin-search-input"
@@ -327,7 +350,6 @@ export default function AdminRegistrations() {
       ) : registrations.length === 0 ? (
         <div className="admin-table-container">
           <div className="admin-empty-state">
-            <div className="admin-empty-icon">📝</div>
             <div className="admin-empty-title">No registrations found</div>
             <div className="admin-empty-desc">
               {search || selectedEventId || selectedStatus !== 'ALL'
@@ -423,16 +445,26 @@ export default function AdminRegistrations() {
                           View
                         </Link>
                         {canEdit && (
-                          <button
-                            onClick={() => {
-                              setActiveModalReg(reg);
-                              setNewStatus(reg.status);
-                              setStatusNotes(reg.statusNotes || '');
-                            }}
-                            className="admin-btn admin-btn-secondary admin-btn-sm"
-                          >
-                            Status
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setActiveModalReg(reg);
+                                setNewStatus(reg.status);
+                                statusNotes && setStatusNotes(reg.statusNotes || '');
+                              }}
+                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                            >
+                              Status
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(reg)}
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                              style={{ color: 'var(--ad-danger-text)' }}
+                              title="Delete Registration"
+                            >
+                              Delete
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -530,6 +562,47 @@ export default function AdminRegistrations() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE REGISTRATION CONFIRMATION MODAL */}
+      {deleteTarget && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
+                Delete Registration
+              </h3>
+              <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete registration <strong>#{deleteTarget.registrationNumber}</strong> for event <strong>"{deleteTarget.event?.title}"</strong>?
+              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                This will delete all participant entries, questionnaire field responses, and verification logs associated with this registration number. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="admin-btn admin-btn-secondary admin-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingReg}
+                onClick={handleDeleteRegistration}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {deletingReg ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -195,7 +195,7 @@ export default function PublicRegistration() {
       }
 
       // Custom participant fields
-      const participantFields = data.form.fields.filter((f) => f.fieldScope === 'PARTICIPANT' && !f.isFixed);
+      const participantFields = (data.form?.fields || []).filter((f) => f.fieldScope === 'PARTICIPANT' && !f.isFixed);
       participantFields.forEach((f) => {
         const val = p.custom ? p.custom[f.fieldKey] : undefined;
         if (f.isRequired && (val === undefined || val === null || String(val).trim() === '')) {
@@ -205,7 +205,7 @@ export default function PublicRegistration() {
     });
 
     // Registration-level custom fields
-    const regFields = data.form.fields.filter((f) => f.fieldScope === 'REGISTRATION');
+    const regFields = (data.form?.fields || []).filter((f) => f.fieldScope === 'REGISTRATION');
     regFields.forEach((f) => {
       const val = registrationFields[f.fieldKey];
       if (f.isRequired && (val === undefined || val === null || String(val).trim() === '')) {
@@ -222,7 +222,7 @@ export default function PublicRegistration() {
     setGlobalError(null);
 
     if (!data?.availability?.isOpen) {
-      setGlobalError('Registration for this event is currently closed.');
+      setGlobalError(data?.availability?.message || 'Registration for this event is currently closed.');
       return;
     }
 
@@ -239,7 +239,7 @@ export default function PublicRegistration() {
         teamName: regType === 'TEAM' ? teamName.trim() : null,
         participants,
         registrationFields,
-        formVersion: data.form.version,
+        formVersion: data.form?.version || 1,
       };
 
       const result = await registrationService.submitRegistration(slug, payload);
@@ -275,6 +275,14 @@ export default function PublicRegistration() {
   }
 
   if (pageError || !data) {
+    const isNotFound = pageError?.toLowerCase().includes('not found');
+    const isUnavailable = pageError?.toLowerCase().includes('unavailable');
+    const title = isNotFound
+      ? 'Event Not Found'
+      : isUnavailable
+      ? 'Registration Unavailable'
+      : 'Unable to Load Registration';
+
     return (
       <div className="public-reg-page">
         <div className="reg-container">
@@ -288,13 +296,23 @@ export default function PublicRegistration() {
           </div>
 
           <div className="reg-header-card" style={{ textAlign: 'center', padding: '50px 20px' }}>
-            <h2 style={{ color: '#f43f5e', marginBottom: '16px' }}>Event Registration Unavailable</h2>
+            <h2 style={{ color: '#f43f5e', marginBottom: '16px' }}>{title}</h2>
             <p style={{ color: '#94a3b8', maxWidth: '500px', margin: '0 auto 24px' }}>
-              {pageError || 'The event you requested could not be found.'}
+              {pageError || 'Unable to load registration form. Please try again.'}
             </p>
-            <Link to="/#events" className="btn-success-action is-primary">
-              Return to Events Catalog
-            </Link>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={loadRegistrationData}
+                className="btn-success-action"
+                style={{ cursor: 'pointer' }}
+              >
+                Retry Loading
+              </button>
+              <Link to="/#events" className="btn-success-action is-primary">
+                Return to Events Catalog
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -302,8 +320,8 @@ export default function PublicRegistration() {
   }
 
   const { event, availability, form } = data;
-  const participantCustomFields = form.fields.filter((f) => f.fieldScope === 'PARTICIPANT' && !f.isFixed);
-  const registrationLevelFields = form.fields.filter((f) => f.fieldScope === 'REGISTRATION');
+  const participantCustomFields = (form?.fields || []).filter((f) => f.fieldScope === 'PARTICIPANT' && !f.isFixed);
+  const registrationLevelFields = (form?.fields || []).filter((f) => f.fieldScope === 'REGISTRATION');
 
   const minTeam = event.teamMinSize || 2;
   const maxTeam = event.teamMaxSize || 5;
@@ -366,7 +384,7 @@ export default function PublicRegistration() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
-                <span>Capacity: {event.registrationLimit} slots ({availability.remainingSpots ?? 'Open'} remaining)</span>
+                <span>Capacity: {event.registrationLimit} slots ({availability?.remainingSpots ?? 'Open'} remaining)</span>
               </div>
             )}
           </div>
@@ -388,18 +406,21 @@ export default function PublicRegistration() {
         )}
 
         {/* Closed or Inactive State Notice */}
-        {!availability.isOpen ? (
+        {!availability?.isOpen ? (
           <div className="reg-section-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: '#0d121f', borderRadius: '16px', border: '1px solid rgba(244, 63, 94, 0.25)' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔒</div>
             <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.75rem', fontWeight: 800 }}>
-              {availability.status === 'UPCOMING'
+              {availability?.status === 'UPCOMING'
                 ? 'Registration Not Started Yet'
-                : availability.status === 'FULL'
+                : availability?.status === 'FULL'
                 ? 'Event Capacity Full'
+                : availability?.status === 'FORM_NOT_PUBLISHED'
+                ? 'Registration Form Not Published'
+                : availability?.status === 'FORM_UNAVAILABLE'
+                ? 'Registration Form Unavailable'
                 : 'Registration Closed'}
             </h2>
             <p style={{ color: '#94a3b8', maxWidth: '480px', margin: '0 auto 1.75rem', lineHeight: 1.6, fontSize: '0.9375rem' }}>
-              {availability.message || 'Submissions for this arena are currently not being accepted.'}
+              {availability?.message || 'Registration is currently closed for this event.'}
             </p>
             <Link to={`/events/${slug}`} className="btn-success-action is-primary" style={{ textDecoration: 'none', display: 'inline-flex', padding: '0.75rem 1.75rem' }}>
               ← Return to Event Details

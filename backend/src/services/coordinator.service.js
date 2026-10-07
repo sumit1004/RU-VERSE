@@ -436,3 +436,54 @@ export const updateCoordinatorEvents = async (id, eventIds, adminUserId, req = n
     assignedEvents: validEvents,
   };
 };
+
+/**
+ * Permanently delete a coordinator account
+ */
+export const deleteCoordinator = async (id, adminUserId, req = null) => {
+  const coordinator = await getCoordinatorById(id);
+
+  if (coordinator.id === adminUserId) {
+    const error = new Error('You cannot delete your own account.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (coordinator.role?.slug === 'admin') {
+    const error = new Error('Administrator accounts cannot be deleted from coordinator management.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Delete coordinator relations and user in transaction
+  await prisma.$transaction(async (tx) => {
+    // Delete coordinator events
+    await tx.eventCoordinator.deleteMany({
+      where: { userId: coordinator.id },
+    });
+
+    // Delete user permissions
+    await tx.userPermission.deleteMany({
+      where: { userId: coordinator.id },
+    });
+
+    // Delete user
+    await tx.user.delete({
+      where: { id: coordinator.id },
+    });
+  });
+
+  await createAuditLog({
+    actorUserId: adminUserId,
+    action: 'COORDINATOR_DELETED',
+    entityType: 'COORDINATOR',
+    entityId: coordinator.id,
+    metadata: {
+      name: coordinator.name,
+      email: coordinator.email,
+    },
+    req,
+  });
+
+  return { success: true, message: 'Coordinator deleted successfully.' };
+};

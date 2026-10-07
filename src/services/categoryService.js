@@ -34,12 +34,20 @@ export const categoryService = {
     return res.data?.category || null;
   },
 
-  async patchCategoryStatus(id, isActive) {
+  async toggleCategoryStatus(id, isActive) {
     const res = await request(`/admin/categories/${id}/status`, {
       method: 'PATCH',
-      body: { isActive },
+      body: { isActive: Boolean(isActive) },
     });
     return res.data?.category || null;
+  },
+
+  async patchCategoryStatus(id, isActive) {
+    return this.toggleCategoryStatus(id, isActive);
+  },
+
+  async updateCategoryStatus(id, isActive) {
+    return this.toggleCategoryStatus(id, isActive);
   },
 
   async deleteCategory(id) {

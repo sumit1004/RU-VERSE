@@ -11,7 +11,7 @@ import {
   patchEventFeatured,
   patchEventOpenForAll,
   patchEventArchive,
-  deleteOrArchiveEventHandler,
+  deleteEventHandler,
 } from '../controllers/event.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/permission.middleware.js';
@@ -85,5 +85,5 @@ adminEventRouter.patch(
 adminEventRouter.delete(
   '/:id',
   requirePermission('events.archive'),
-  deleteOrArchiveEventHandler
+  deleteEventHandler
 );

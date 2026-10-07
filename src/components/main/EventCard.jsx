@@ -10,7 +10,7 @@ import { formatEventDates } from '../../data/eventsData';
  * - Formats dates and category tags dynamically.
  * - Handles registration link state.
  */
-export default function EventCard({ event, categoryLabelMap = {} }) {
+export default function EventCard({ event, categoryLabelMap = {}, onViewRegistrations }) {
   const [imageError, setImageError] = useState(false);
   const regUrl = event.registrationUrl || (event.slug ? `/events/${event.slug}/register` : null);
   const hasUrl = Boolean(regUrl && String(regUrl).trim() !== '');
@@ -23,6 +23,8 @@ export default function EventCard({ event, categoryLabelMap = {} }) {
     : event.category
     ? [event.category]
     : [];
+
+  const supportsViewRegistrations = Boolean(event.slug && event.registrationMode !== 'EXTERNAL');
 
   return (
     <article className="event-card">
@@ -71,40 +73,54 @@ export default function EventCard({ event, categoryLabelMap = {} }) {
         <p className="event-card-desc">{event.description}</p>
       </div>
 
-      {/* Card Footer / Action Button */}
+      {/* Card Footer / Action Buttons */}
       <div className="event-card-footer">
-        {hasUrl ? (
-          isExternal ? (
-            <a
-              href={regUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="event-card-btn"
-              aria-label={`Register for ${event.title}`}
-            >
-              <span>REGISTER</span>
-              <span className="card-btn-arrow" aria-hidden="true">→</span>
-            </a>
+        <div className="event-card-actions">
+          {hasUrl ? (
+            isExternal ? (
+              <a
+                href={regUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="event-card-btn"
+                aria-label={`Register for ${event.title}`}
+              >
+                <span>REGISTER NOW</span>
+                <span className="card-btn-arrow" aria-hidden="true">→</span>
+              </a>
+            ) : (
+              <Link
+                to={regUrl}
+                className="event-card-btn"
+                aria-label={`Register for ${event.title}`}
+              >
+                <span>REGISTER NOW</span>
+                <span className="card-btn-arrow" aria-hidden="true">→</span>
+              </Link>
+            )
           ) : (
-            <Link
-              to={regUrl}
-              className="event-card-btn"
-              aria-label={`Register for ${event.title}`}
+            <button
+              type="button"
+              className="event-card-btn disabled"
+              disabled
+              aria-label={`Registration opening soon for ${event.title}`}
             >
-              <span>REGISTER</span>
-              <span className="card-btn-arrow" aria-hidden="true">→</span>
-            </Link>
-          )
-        ) : (
-          <button
-            type="button"
-            className="event-card-btn disabled"
-            disabled
-            aria-label={`Registration opening soon for ${event.title}`}
-          >
-            <span>REGISTRATION SOON</span>
-          </button>
-        )}
+              <span>REGISTRATION SOON</span>
+            </button>
+          )}
+
+          {supportsViewRegistrations && (
+            <button
+              type="button"
+              className="event-card-view-reg-btn"
+              onClick={() => onViewRegistrations && onViewRegistrations(event)}
+              aria-label={`View your registration for ${event.title}`}
+            >
+              <span>VIEW YOUR REGISTRATION</span>
+              <span className="card-btn-arrow" aria-hidden="true">↗</span>
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

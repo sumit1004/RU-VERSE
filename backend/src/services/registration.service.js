@@ -1,6 +1,7 @@
 import { prisma } from '../config/database.js';
 import { generateRegistrationNumber } from '../utils/registration-number.js';
 import { createAuditLog } from './audit.service.js';
+import { getOrCreateEventForm } from './form.service.js';
 
 /**
  * Get public event registration details and published dynamic form
@@ -9,9 +10,6 @@ export const getPublicRegistrationData = async (slug) => {
   const event = await prisma.event.findFirst({
     where: {
       slug: String(slug).trim(),
-      isPublished: true,
-      isActive: true,
-      archivedAt: null,
     },
     include: {
       category: {
@@ -29,21 +27,37 @@ export const getPublicRegistrationData = async (slug) => {
   });
 
   if (!event) {
-    const error = new Error('Event not found or registration is unavailable.');
+    const error = new Error('Event not found.');
     error.statusCode = 404;
+    error.code = 'EVENT_NOT_FOUND';
     throw error;
   }
 
-  const form = event.registrationForm;
-  if (!form || form.status !== 'PUBLISHED') {
-    const error = new Error('Registration form is not yet published for this event.');
-    error.statusCode = 400;
+  if (!event.isPublished || !event.isActive || event.archivedAt !== null) {
+    const error = new Error('Registration is unavailable for this event.');
+    error.statusCode = 403;
+    error.code = 'EVENT_NOT_PUBLISHED';
     throw error;
   }
+
+  let form = event.registrationForm;
+
+  // If event is published and internal mode, but form has not been initialized yet, auto-initialize
+  if (!form && event.registrationMode !== 'EXTERNAL') {
+    try {
+      const created = await getOrCreateEventForm(event.id, null, 'PUBLISHED');
+      form = created.form;
+    } catch {
+      // Graceful fallback
+    }
+  }
+
+  const formExists = Boolean(form);
+  const formPublished = Boolean(form && form.status === 'PUBLISHED');
 
   const now = new Date();
-  const regStart = new Date(event.registrationStart);
-  const regEnd = new Date(event.registrationEnd);
+  const regStart = event.registrationStart ? new Date(event.registrationStart) : null;
+  const regEnd = event.registrationEnd ? new Date(event.registrationEnd) : null;
 
   // Calculate active registrations count for capacity
   const activeCount = await prisma.registration.count({
@@ -55,18 +69,35 @@ export const getPublicRegistrationData = async (slug) => {
 
   let status = 'OPEN';
   let message = 'Registration is open';
+  let reason = null;
 
-  if (now < regStart) {
-    status = 'UPCOMING';
-    message = 'Registration has not started yet.';
-  } else if (now > regEnd) {
+  if (!formExists) {
+    status = 'FORM_UNAVAILABLE';
+    reason = 'FORM_NOT_FOUND';
+    message = 'Registration form is not available for this event.';
+  } else if (!formPublished) {
+    status = 'FORM_NOT_PUBLISHED';
+    reason = 'FORM_NOT_PUBLISHED';
+    message = 'Registration form is not yet published for this event.';
+  } else if (event.registrationMode === 'CLOSED') {
     status = 'CLOSED';
-    message = 'Registration for this event has closed.';
+    reason = 'MANUAL_CLOSED';
+    message = 'Registration is currently closed.';
+  } else if (regStart && now < regStart) {
+    status = 'UPCOMING';
+    reason = 'NOT_STARTED';
+    message = 'Registration has not started yet.';
+  } else if (regEnd && now > regEnd) {
+    status = 'CLOSED';
+    reason = 'REGISTRATION_CLOSED';
+    message = 'Registration is closed.';
   } else if (event.registrationLimit && activeCount >= event.registrationLimit) {
     status = 'FULL';
+    reason = 'CAPACITY_REACHED';
     message = 'Registration capacity for this event has been reached.';
   }
 
+  const isOpen = status === 'OPEN';
   const remainingSpots = event.registrationLimit ? Math.max(0, event.registrationLimit - activeCount) : null;
 
   return {
@@ -90,18 +121,25 @@ export const getPublicRegistrationData = async (slug) => {
     },
     availability: {
       status,
-      isOpen: status === 'OPEN',
+      isOpen,
+      available: isOpen,
+      reason,
+      formExists,
+      formPublished,
+      registrationType: event.registrationType,
+      registrationStart: event.registrationStart,
+      registrationEnd: event.registrationEnd,
       message,
       activeRegistrations: activeCount,
       remainingSpots,
       serverTime: now.toISOString(),
     },
-    form: {
+    form: form && formPublished ? {
       id: form.id,
       version: form.version,
       title: form.title,
       description: form.description,
-      fields: form.fields.map((f) => ({
+      fields: (form.fields || []).map((f) => ({
         id: f.id,
         label: f.label,
         fieldKey: f.fieldKey,
@@ -115,7 +153,7 @@ export const getPublicRegistrationData = async (slug) => {
         validationJson: f.validationJson,
         isFixed: f.isFixed,
       })),
-    },
+    } : null,
   };
 };
 
@@ -157,20 +195,27 @@ export const submitPublicRegistration = async (slug, payload) => {
       throw error;
     }
 
+    if (event.registrationMode === 'CLOSED') {
+      const error = new Error('Registration is currently closed.');
+      error.statusCode = 409;
+      error.code = 'REGISTRATION_CLOSED';
+      throw error;
+    }
+
     // 2. Server-authoritative time check
     const now = new Date();
-    const regStart = new Date(event.registrationStart);
-    const regEnd = new Date(event.registrationEnd);
+    const regStart = event.registrationStart ? new Date(event.registrationStart) : null;
+    const regEnd = event.registrationEnd ? new Date(event.registrationEnd) : null;
 
-    if (now < regStart) {
+    if (regStart && now < regStart) {
       const error = new Error('Registration has not started yet.');
       error.statusCode = 409;
       error.code = 'REGISTRATION_NOT_STARTED';
       throw error;
     }
 
-    if (now > regEnd) {
-      const error = new Error('Registration for this event has closed.');
+    if (regEnd && now > regEnd) {
+      const error = new Error('Registration is closed.');
       error.statusCode = 409;
       error.code = 'REGISTRATION_CLOSED';
       throw error;
@@ -837,4 +882,206 @@ export const exportRegistrations = async ({
     rowCount: registrations.length,
   };
 };
+
+/**
+ * Permanently delete a registration record and its participants & custom fields
+ */
+export const deleteRegistration = async (id, user, req = null) => {
+  const regId = parseInt(id, 10);
+  if (isNaN(regId)) {
+    const error = new Error('Invalid registration ID.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existing = await prisma.registration.findUnique({
+    where: { id: regId },
+    include: {
+      event: { select: { id: true, title: true } },
+      participants: { select: { id: true, fullName: true, email: true } },
+    },
+  });
+
+  if (!existing) {
+    const error = new Error('Registration not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Delete participant field values
+    const participantIds = existing.participants.map((p) => p.id);
+    if (participantIds.length > 0) {
+      await tx.participantFieldValue.deleteMany({
+        where: { participantId: { in: participantIds } },
+      });
+    }
+
+    // Delete participants
+    await tx.participant.deleteMany({
+      where: { registrationId: regId },
+    });
+
+    // Delete registration field values
+    await tx.registrationFieldValue.deleteMany({
+      where: { registrationId: regId },
+    });
+
+    // Delete registration
+    await tx.registration.delete({
+      where: { id: regId },
+    });
+  });
+
+  await createAuditLog({
+    actorUserId: user?.id || null,
+    action: 'REGISTRATION_DELETED',
+    entityType: 'REGISTRATION',
+    eventId: existing.event?.id || null,
+    metadata: {
+      registrationNumber: existing.registrationNumber,
+      eventTitle: existing.event?.title,
+      leaderName: existing.participants[0]?.fullName,
+    },
+    req,
+  });
+
+  return { success: true, message: 'Registration deleted successfully.' };
+};
+
+/**
+ * Public Endpoint: Get event registrations list with strict privacy controls
+ * Returns ONLY public-safe fields (teamName, leaderName for teams; participantName for individuals)
+ */
+export const getPublicEventRegistrations = async (slug, options = {}) => {
+  const { search, type, page = 1, limit = 20, sortOrder = 'desc' } = options;
+
+  // 1. Verify published, active, non-archived event
+  const event = await prisma.event.findFirst({
+    where: {
+      slug: String(slug).trim(),
+      isPublished: true,
+      isActive: true,
+      archivedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      registrationType: true,
+      registrationMode: true,
+      registrationStart: true,
+      registrationEnd: true,
+      registrationLimit: true,
+      isPublished: true,
+      isActive: true,
+    },
+  });
+
+  if (!event) {
+    const error = new Error('Event not found or is currently not publicly accessible.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2. Pagination constraints
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (pageNum - 1) * limitNum;
+
+  // 3. Database query where clause
+  const where = {
+    eventId: event.id,
+    status: { in: ['CONFIRMED', 'PENDING', 'WAITLISTED'] },
+  };
+
+  // Optional type filtering: TEAM or INDIVIDUAL
+  if (type && ['TEAM', 'INDIVIDUAL'].includes(type.toUpperCase())) {
+    where.registrationType = type.toUpperCase();
+  }
+
+  // Database-level search against teamName and leader/participant fullName
+  if (search && String(search).trim()) {
+    const searchStr = String(search).trim();
+    where.OR = [
+      { teamName: { contains: searchStr } },
+      {
+        participants: {
+          some: {
+            fullName: { contains: searchStr },
+          },
+        },
+      },
+    ];
+  }
+
+  // 4. Parallel count and findMany with strict field projection
+  const [total, registrations] = await Promise.all([
+    prisma.registration.count({ where }),
+    prisma.registration.findMany({
+      where,
+      skip,
+      take: limitNum,
+      orderBy: {
+        submittedAt: sortOrder === 'asc' ? 'asc' : 'desc',
+      },
+      select: {
+        id: true,
+        registrationType: true,
+        teamName: true,
+        submittedAt: true,
+        participants: {
+          select: {
+            fullName: true,
+            participantOrder: true,
+          },
+          orderBy: {
+            participantOrder: 'asc',
+          },
+          take: 1,
+        },
+      },
+    }),
+  ]);
+
+  // 5. Strict public field formatting
+  const formattedRegistrations = registrations.map((reg) => {
+    const primaryName = reg.participants?.[0]?.fullName || 'Participant';
+
+    if (reg.registrationType === 'TEAM') {
+      return {
+        id: reg.id,
+        registrationType: 'TEAM',
+        teamName: reg.teamName || 'Unnamed Team',
+        leaderName: primaryName,
+        submittedAt: reg.submittedAt,
+      };
+    }
+
+    return {
+      id: reg.id,
+      registrationType: 'INDIVIDUAL',
+      participantName: primaryName,
+      submittedAt: reg.submittedAt,
+    };
+  });
+
+  return {
+    event: {
+      id: event.id,
+      title: event.title,
+      slug: event.slug,
+      registrationType: event.registrationType,
+      registrationMode: event.registrationMode,
+    },
+    registrations: formattedRegistrations,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum) || 1,
+    },
+  };
+};
+
 

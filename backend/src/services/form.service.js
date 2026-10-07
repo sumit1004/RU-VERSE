@@ -31,7 +31,7 @@ export const generateUniqueFieldKey = async (label, formId, currentFieldId = nul
 /**
  * Get or initialize registration form for an event with baseline participant fields
  */
-export const getOrCreateEventForm = async (eventId, userId) => {
+export const getOrCreateEventForm = async (eventId, userId, defaultStatus = 'DRAFT') => {
   const parsedEventId = parseInt(eventId, 10);
   if (isNaN(parsedEventId)) {
     const error = new Error('Invalid event ID.');
@@ -77,14 +77,16 @@ export const getOrCreateEventForm = async (eventId, userId) => {
     };
   }
 
-  // If form does not exist, initialize draft form with fixed baseline participant fields in a transaction
+  // If form does not exist, initialize form with fixed baseline participant fields in a transaction
+  const initialFormStatus = defaultStatus === 'PUBLISHED' || event.isPublished ? 'PUBLISHED' : 'DRAFT';
   const initialForm = await prisma.$transaction(async (tx) => {
     const newForm = await tx.registrationForm.create({
       data: {
         eventId: parsedEventId,
         title: `${event.title} Registration Form`,
         description: `Official registration form for ${event.title}. Please provide accurate participant details.`,
-        status: 'DRAFT',
+        status: initialFormStatus,
+        publishedAt: initialFormStatus === 'PUBLISHED' ? new Date() : null,
         version: 1,
         createdById: userId || null,
         updatedById: userId || null,

@@ -13,7 +13,7 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
-  // Modal State
+  // Modal State (Create / Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formName, setFormName] = useState('');
@@ -108,7 +108,11 @@ export default function AdminCategories() {
       showToast('success', `Category "${cat.name}" is now ${!cat.isActive ? 'Active' : 'Inactive'}.`);
       loadCategories();
     } catch (err) {
-      showToast('error', err.message || 'Failed to update status.');
+      if (err.status === 403) {
+        showToast('error', 'You do not have permission to modify this category.');
+      } else {
+        showToast('error', err.message || 'Unable to update category status. Please try again.');
+      }
     }
   };
 
@@ -121,7 +125,13 @@ export default function AdminCategories() {
       setDeleteTarget(null);
       loadCategories();
     } catch (err) {
-      showToast('error', err.message || 'Failed to delete category.');
+      if (err.status === 403) {
+        showToast('error', 'You do not have permission to delete this category.');
+      } else if (err.status === 404) {
+        showToast('error', 'Category not found.');
+      } else {
+        showToast('error', err.message || 'Cannot delete this category. It is currently assigned to existing events. Deactivate it instead.');
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -179,7 +189,6 @@ export default function AdminCategories() {
       ) : categories.length === 0 ? (
         <div className="admin-table-container">
           <div className="admin-empty-state">
-            <div className="admin-empty-icon">📁</div>
             <div className="admin-empty-title">No categories found</div>
             <div className="admin-empty-desc">Create your first event category to organize fest arenas.</div>
           </div>
@@ -199,57 +208,71 @@ export default function AdminCategories() {
               </tr>
             </thead>
             <tbody>
-              {categories.map((cat) => (
-                <tr key={cat.id}>
-                  <td style={{ fontWeight: 600, color: 'var(--ad-text-primary)' }}>
-                    {cat.name}
-                  </td>
-                  <td style={{ fontFamily: 'var(--ad-font-mono)', fontSize: '0.75rem', color: 'var(--ad-text-secondary)' }}>
-                    {cat.slug}
-                  </td>
-                  <td style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ad-text-muted)', fontSize: '0.75rem' }}>
-                    {cat.description || '—'}
-                  </td>
-                  <td style={{ fontSize: '0.75rem', color: 'var(--ad-text-secondary)' }}>
-                    {cat._count?.events || 0} event{(cat._count?.events || 0) === 1 ? '' : 's'}
-                  </td>
-                  <td style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)' }}>
-                    {cat.displayOrder}
-                  </td>
-                  <td>
-                    <StatusBadge status={cat.isActive ? 'ACTIVE' : 'INACTIVE'} />
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="admin-table-actions" style={{ justifyContent: 'flex-end' }}>
-                      {canEdit && (
-                        <>
+              {categories.map((cat) => {
+                const eventCount = cat._count?.events || 0;
+                return (
+                  <tr key={cat.id}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--ad-text-primary)' }}>
+                        {cat.name}
+                      </div>
+                    </td>
+                    <td style={{ fontFamily: 'var(--ad-font-mono)', fontSize: '0.75rem', color: 'var(--ad-text-secondary)' }}>
+                      {cat.slug}
+                    </td>
+                    <td style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ad-text-muted)', fontSize: '0.75rem' }}>
+                      {cat.description || '—'}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          color: eventCount > 0 ? 'var(--ad-text-primary)' : 'var(--ad-text-dim)',
+                          fontWeight: eventCount > 0 ? 600 : 400,
+                        }}
+                      >
+                        {eventCount} event{eventCount === 1 ? '' : 's'}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)' }}>
+                      {cat.displayOrder}
+                    </td>
+                    <td>
+                      <StatusBadge status={cat.isActive ? 'ACTIVE' : 'INACTIVE'} />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="admin-table-actions" style={{ justifyContent: 'flex-end' }}>
+                        {canEdit && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(cat)}
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleToggleActive(cat)}
+                              className={`admin-btn admin-btn-sm ${cat.isActive ? 'admin-btn-danger' : 'admin-btn-success'}`}
+                            >
+                              {cat.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </>
+                        )}
+                        {canDelete && (
                           <button
-                            onClick={() => openEditModal(cat)}
+                            onClick={() => setDeleteTarget(cat)}
                             className="admin-btn admin-btn-ghost admin-btn-sm"
+                            style={{ color: eventCount > 0 ? 'var(--ad-text-dim)' : 'var(--ad-danger-text)' }}
+                            title={eventCount > 0 ? `Assigned to ${eventCount} events. Deactivate instead of deleting.` : 'Delete Category'}
                           >
-                            Edit
+                            Delete
                           </button>
-                          <button
-                            onClick={() => handleToggleActive(cat)}
-                            className={`admin-btn admin-btn-sm ${cat.isActive ? 'admin-btn-danger' : 'admin-btn-success'}`}
-                          >
-                            {cat.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                        </>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => setDeleteTarget(cat)}
-                          className="admin-btn admin-btn-ghost admin-btn-sm"
-                          style={{ color: 'var(--ad-danger-text)' }}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -269,7 +292,7 @@ export default function AdminCategories() {
             <form onSubmit={handleFormSubmit}>
               <div className="admin-modal-body">
                 <div className="admin-form-group">
-                  <label className="admin-label">Category Name</label>
+                  <label className="admin-label">Category Name *</label>
                   <input
                     type="text"
                     className="admin-input"
@@ -329,39 +352,89 @@ export default function AdminCategories() {
         </div>
       )}
 
-      {/* DELETE CONFIRM MODAL */}
+      {/* DELETE / DEACTIVATE MODAL */}
       {deleteTarget && (
         <div className="admin-modal-overlay">
           <div className="admin-modal">
-            <div className="admin-modal-header">
-              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
-                Delete Category
-              </h3>
-              <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
-            </div>
+            {(() => {
+              const eventCount = deleteTarget._count?.events || 0;
+              const hasEvents = eventCount > 0;
 
-            <div className="admin-modal-body">
-              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
-                Are you sure you want to delete <strong>{deleteTarget.name}</strong>?
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', margin: 0 }}>
-                Categories with assigned events cannot be permanently removed. You can deactivate them instead.
-              </p>
-            </div>
+              if (hasEvents) {
+                return (
+                  <>
+                    <div className="admin-modal-header">
+                      <h3 className="admin-modal-title">
+                        Cannot Delete Category
+                      </h3>
+                      <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
+                    </div>
 
-            <div className="admin-modal-footer">
-              <button type="button" onClick={() => setDeleteTarget(null)} className="admin-btn admin-btn-secondary admin-btn-sm">
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleDelete}
-                className="admin-btn admin-btn-danger admin-btn-sm"
-              >
-                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-              </button>
-            </div>
+                    <div className="admin-modal-body">
+                      <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                        <strong>{deleteTarget.name}</strong> is currently assigned to <strong>{eventCount} event{eventCount === 1 ? '' : 's'}</strong>.
+                      </p>
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', lineHeight: 1.5, margin: 0 }}>
+                        Categories with associated events cannot be deleted to protect historical records and schedule integrity. You can deactivate this category instead to prevent it from being selected for new events.
+                      </p>
+                    </div>
+
+                    <div className="admin-modal-footer">
+                      <button type="button" onClick={() => setDeleteTarget(null)} className="admin-btn admin-btn-secondary admin-btn-sm">
+                        Close
+                      </button>
+                      {deleteTarget.isActive && canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const target = deleteTarget;
+                            setDeleteTarget(null);
+                            handleToggleActive(target);
+                          }}
+                          className="admin-btn admin-btn-primary admin-btn-sm"
+                        >
+                          Deactivate Category Instead
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              }
+
+              return (
+                <>
+                  <div className="admin-modal-header">
+                    <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
+                      Delete Category
+                    </h3>
+                    <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
+                  </div>
+
+                  <div className="admin-modal-body">
+                    <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                      Are you sure you want to permanently delete <strong>{deleteTarget.name}</strong>?
+                    </p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: 0 }}>
+                      This category has no assigned events and will be permanently removed. This action cannot be undone.
+                    </p>
+                  </div>
+
+                  <div className="admin-modal-footer">
+                    <button type="button" onClick={() => setDeleteTarget(null)} className="admin-btn admin-btn-secondary admin-btn-sm">
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={handleDelete}
+                      className="admin-btn admin-btn-danger admin-btn-sm"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

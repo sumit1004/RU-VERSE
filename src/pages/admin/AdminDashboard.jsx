@@ -15,59 +15,70 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [regSummary, setRegSummary] = useState({ total: 0, confirmed: 0, pending: 0, cancelled: 0, rejected: 0 });
   const [coordinatorsCount, setCoordinatorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const promises = [
-          eventService.getAdminEvents({ includeArchived: true }).catch(() => []),
-        ];
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const promises = [
+        eventService.getAdminEvents({ includeArchived: true }).catch(() => []),
+      ];
 
-        if (isAdmin || hasPermission('categories.view')) {
-          promises.push(categoryService.getAdminCategories().catch(() => []));
-        } else {
-          promises.push(Promise.resolve([]));
-        }
-
-        if (isAdmin || hasPermission('registrations.view')) {
-          promises.push(registrationService.getRegistrations({ limit: 10 }).catch(() => ({ items: [] })));
-        } else {
-          promises.push(Promise.resolve({ items: [] }));
-        }
-
-        if (isAdmin) {
-          promises.push(coordinatorService.getCoordinators().catch(() => ({ items: [] })));
-        } else {
-          promises.push(Promise.resolve({ items: [] }));
-        }
-
-        const [evts, cats, regsRes, coordsRes] = await Promise.all(promises);
-        setEvents(Array.isArray(evts) ? evts : []);
-        setCategories(Array.isArray(cats) ? cats : []);
-        setRegistrations(regsRes?.items || regsRes?.registrations || []);
-        setCoordinatorsCount(coordsRes?.items?.length || coordsRes?.coordinators?.length || 0);
-      } catch (err) {
-        setError(err.message || 'Failed to load dashboard statistics.');
-      } finally {
-        setLoading(false);
+      if (isAdmin || hasPermission('categories.view')) {
+        promises.push(categoryService.getAdminCategories().catch(() => []));
+      } else {
+        promises.push(Promise.resolve([]));
       }
+
+      if (isAdmin || hasPermission('registrations.view')) {
+        promises.push(registrationService.getRegistrations({ limit: 10 }).catch(() => ({ items: [], summary: {} })));
+      } else {
+        promises.push(Promise.resolve({ items: [], summary: {} }));
+      }
+
+      if (isAdmin) {
+        promises.push(coordinatorService.getCoordinators().catch(() => ({ items: [], pagination: {} })));
+      } else {
+        promises.push(Promise.resolve({ items: [], pagination: {} }));
+      }
+
+      const [evts, cats, regsRes, coordsRes] = await Promise.all(promises);
+      setEvents(Array.isArray(evts) ? evts : []);
+      setCategories(Array.isArray(cats) ? cats : []);
+      setRegistrations(regsRes?.items || regsRes?.registrations || []);
+      if (regsRes?.summary) {
+        setRegSummary(regsRes.summary);
+      } else if (regsRes?.pagination) {
+        setRegSummary((prev) => ({ ...prev, total: regsRes.pagination.total || 0 }));
+      }
+      setCoordinatorsCount(coordsRes?.pagination?.total || coordsRes?.items?.length || coordsRes?.coordinators?.length || 0);
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard statistics.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
   }, [isAdmin, hasPermission]);
 
   const totalCategories = categories.length;
   const activeCategories = categories.filter((c) => c.isActive).length;
 
+  // Active Events: Published, non-archived, and active
+  const activeEvents = events.filter((e) => e.isPublished && !e.archivedAt && e.isActive !== false);
   const totalEvents = events.filter((e) => !e.archivedAt).length;
-  const publishedEvents = events.filter((e) => e.isPublished && !e.archivedAt).length;
+  const publishedEvents = activeEvents.length;
+  const draftEvents = events.filter((e) => !e.isPublished && !e.archivedAt).length;
 
-  const totalRegistrations = registrations.length;
-  const confirmedRegistrations = registrations.filter((r) => r.status === 'CONFIRMED').length;
-  const pendingRegistrations = registrations.filter((r) => r.status === 'PENDING').length;
+  const totalRegistrations = regSummary.total || registrations.length;
+  const confirmedRegistrations = regSummary.confirmed || registrations.filter((r) => r.status === 'CONFIRMED').length;
+  const pendingRegistrations = regSummary.pending || registrations.filter((r) => r.status === 'PENDING').length;
 
   return (
     <div>
@@ -82,6 +93,14 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="admin-btn admin-btn-ghost admin-btn-sm"
+            title="Refresh metrics from database"
+          >
+            {loading ? 'Refreshing...' : '↻ Refresh'}
+          </button>
           {hasPermission('events.create') && (
             <Link to="/admin/events/create" className="admin-btn admin-btn-primary admin-btn-sm">
               + New Event
@@ -106,7 +125,6 @@ export default function AdminDashboard() {
         <div className="admin-kpi-card">
           <div className="admin-kpi-top">
             <span className="admin-kpi-label">{isAdmin ? 'Total Events' : 'Assigned Events'}</span>
-            <div className="admin-kpi-icon">🎪</div>
           </div>
           <div className="admin-kpi-value">{loading ? '—' : totalEvents}</div>
           <div className="admin-kpi-sub">
@@ -118,7 +136,6 @@ export default function AdminDashboard() {
         <div className="admin-kpi-card">
           <div className="admin-kpi-top">
             <span className="admin-kpi-label">Registrations</span>
-            <div className="admin-kpi-icon">📝</div>
           </div>
           <div className="admin-kpi-value">{loading ? '—' : totalRegistrations}</div>
           <div className="admin-kpi-sub">
@@ -132,7 +149,6 @@ export default function AdminDashboard() {
             <div className="admin-kpi-card">
               <div className="admin-kpi-top">
                 <span className="admin-kpi-label">Categories</span>
-                <div className="admin-kpi-icon">📁</div>
               </div>
               <div className="admin-kpi-value">{loading ? '—' : totalCategories}</div>
               <div className="admin-kpi-sub">
@@ -144,7 +160,6 @@ export default function AdminDashboard() {
             <div className="admin-kpi-card">
               <div className="admin-kpi-top">
                 <span className="admin-kpi-label">Coordinators</span>
-                <div className="admin-kpi-icon">👥</div>
               </div>
               <div className="admin-kpi-value">{loading ? '—' : coordinatorsCount}</div>
               <div className="admin-kpi-sub">
@@ -170,13 +185,12 @@ export default function AdminDashboard() {
           <div className="admin-table-container" style={{ padding: '2rem', textAlign: 'center', color: 'var(--ad-text-muted)' }}>
             Loading events...
           </div>
-        ) : events.length === 0 ? (
+        ) : activeEvents.length === 0 ? (
           <div className="admin-table-container">
             <div className="admin-empty-state">
-              <div className="admin-empty-icon">🎪</div>
-              <div className="admin-empty-title">No events found</div>
+              <div className="admin-empty-title">No active events found</div>
               <div className="admin-empty-desc">
-                {isAdmin ? 'Create your first event to get started.' : 'No events have been assigned to your account yet.'}
+                {isAdmin ? 'Publish an event from the Events manager to have it appear here.' : 'No active published events have been assigned to your account.'}
               </div>
             </div>
           </div>
@@ -194,7 +208,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {events.slice(0, 5).map((ev) => (
+                {activeEvents.slice(0, 5).map((ev) => (
                   <tr key={ev.id}>
                     <td style={{ fontWeight: 600 }}>
                       <Link to={`/admin/events/${ev.id}`} style={{ color: 'var(--ad-text-primary)', textDecoration: 'none' }}>
@@ -241,7 +255,6 @@ export default function AdminDashboard() {
           ) : registrations.length === 0 ? (
             <div className="admin-table-container">
               <div className="admin-empty-state">
-                <div className="admin-empty-icon">📝</div>
                 <div className="admin-empty-title">No registrations recorded yet</div>
                 <div className="admin-empty-desc">
                   Attendee submissions will appear here once live registrations start.

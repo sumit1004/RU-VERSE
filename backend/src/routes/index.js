@@ -8,6 +8,8 @@ import {
   adminRegistrationRouter,
   adminEventRegistrationRouter,
 } from './registration.routes.js';
+import coordinatorRouter from './coordinator.routes.js';
+import auditRouter from './audit.routes.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
@@ -36,9 +38,6 @@ router.use('/events', publicRegistrationRouter);
 // Admin Event routes & Admin Event-specific Registration routes
 router.use('/admin/events', adminEventRouter);
 router.use('/admin/events', adminEventRegistrationRouter);
-
-import coordinatorRouter from './coordinator.routes.js';
-import auditRouter from './audit.routes.js';
 
 // Admin Dynamic Form Builder routes
 router.use('/admin/events/:eventId/form', formRouter);

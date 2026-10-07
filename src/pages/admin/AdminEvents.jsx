@@ -23,13 +23,16 @@ export default function AdminEvents() {
   const [selectedType, setSelectedType] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
 
-  // Archive Confirm Modal
+  // Archive & Delete Confirm Modals
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const canCreate = hasPermission('events.create') || isAdmin;
   const canEdit = hasPermission('events.edit') || isAdmin;
   const canArchive = hasPermission('events.archive') || isAdmin;
+  const canDelete = hasPermission('events.archive') || isAdmin;
   const canManageForms = hasPermission('forms.view') || isAdmin;
   const canViewRegs = hasPermission('registrations.view') || isAdmin;
 
@@ -78,7 +81,7 @@ export default function AdminEvents() {
     if (!archiveTarget) return;
     try {
       setIsArchiving(true);
-      await eventService.deleteEvent(archiveTarget.id);
+      await eventService.patchArchive(archiveTarget.id, true);
       showToast('success', `"${archiveTarget.title}" has been archived.`);
       setArchiveTarget(null);
       loadData();
@@ -86,6 +89,31 @@ export default function AdminEvents() {
       showToast('error', err.message || 'Failed to archive event.');
     } finally {
       setIsArchiving(false);
+    }
+  };
+
+  const handleRestore = async (event) => {
+    try {
+      await eventService.patchArchive(event.id, false);
+      showToast('success', `"${event.title}" has been restored from archive.`);
+      loadData();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to restore event.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      await eventService.deleteEvent(deleteTarget.id);
+      showToast('success', `"${deleteTarget.title}" has been permanently deleted.`);
+      setDeleteTarget(null);
+      loadData();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete event.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -144,7 +172,6 @@ export default function AdminEvents() {
       <div className="admin-toolbar">
         <div className="admin-toolbar-left">
           <div className="admin-search-wrapper">
-            <span className="admin-search-icon">🔍</span>
             <input
               type="text"
               className="admin-input admin-search-input"
@@ -223,7 +250,6 @@ export default function AdminEvents() {
       ) : events.length === 0 ? (
         <div className="admin-table-container">
           <div className="admin-empty-state">
-            <div className="admin-empty-icon">🎪</div>
             <div className="admin-empty-title">No events found</div>
             <div className="admin-empty-desc">Create your first event competition or adjust your filter selection.</div>
           </div>
@@ -264,8 +290,8 @@ export default function AdminEvents() {
                       {ev.category?.name || '—'}
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)' }}>📍 {ev.venue || 'TBD'}</div>
-                      <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)' }}>📅 {startDateStr}</div>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)' }}>{ev.venue || 'TBD'}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)' }}>{startDateStr}</div>
                     </td>
                     <td>
                       <StatusBadge status={ev.registrationType} />
@@ -279,7 +305,7 @@ export default function AdminEvents() {
                       </div>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div className="admin-table-actions" style={{ justifyContent: 'flex-end' }}>
+                      <div className="admin-table-actions" style={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <Link to={`/admin/events/${ev.id}`} className="admin-btn admin-btn-ghost admin-btn-sm">
                           View
                         </Link>
@@ -315,9 +341,30 @@ export default function AdminEvents() {
                           <button
                             onClick={() => setArchiveTarget(ev)}
                             className="admin-btn admin-btn-ghost admin-btn-sm"
-                            style={{ color: 'var(--ad-danger-text)' }}
+                            title="Archive Event"
                           >
                             Archive
+                          </button>
+                        )}
+
+                        {canArchive && ev.archivedAt && (
+                          <button
+                            onClick={() => handleRestore(ev)}
+                            className="admin-btn admin-btn-success admin-btn-sm"
+                            title="Restore Event from Archive"
+                          >
+                            Restore
+                          </button>
+                        )}
+
+                        {canDelete && (
+                          <button
+                            onClick={() => setDeleteTarget(ev)}
+                            className="admin-btn admin-btn-ghost admin-btn-sm"
+                            style={{ color: 'var(--ad-danger-text)' }}
+                            title="Delete Event Permanently"
+                          >
+                            Delete
                           </button>
                         )}
                       </div>
@@ -335,7 +382,7 @@ export default function AdminEvents() {
         <div className="admin-modal-overlay">
           <div className="admin-modal">
             <div className="admin-modal-header">
-              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>Archive Event</h3>
+              <h3 className="admin-modal-title">Archive Event</h3>
               <button onClick={() => setArchiveTarget(null)} className="admin-modal-close">×</button>
             </div>
 
@@ -356,9 +403,44 @@ export default function AdminEvents() {
                 type="button"
                 disabled={isArchiving}
                 onClick={handleArchive}
-                className="admin-btn admin-btn-danger admin-btn-sm"
+                className="admin-btn admin-btn-primary admin-btn-sm"
               >
                 {isArchiving ? 'Archiving...' : 'Confirm Archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {deleteTarget && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>Delete Event</h3>
+              <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete <strong>{deleteTarget.title}</strong>?
+              </p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', margin: 0 }}>
+                This action is irreversible. It will delete the event, its custom registration form builder schema, and coordinator assignments. Events with active registrations must be archived instead.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button type="button" onClick={() => setDeleteTarget(null)} className="admin-btn admin-btn-secondary admin-btn-sm">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>

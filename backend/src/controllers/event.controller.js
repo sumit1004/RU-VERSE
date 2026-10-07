@@ -10,6 +10,7 @@ import {
   updateEventFeaturedStatus,
   updateEventOpenForAllStatus,
   archiveEvent,
+  deleteEvent,
 } from '../services/event.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
@@ -186,11 +187,10 @@ export const patchEventArchive = async (req, res, next) => {
   }
 };
 
-export const deleteOrArchiveEventHandler = async (req, res, next) => {
+export const deleteEventHandler = async (req, res, next) => {
   try {
-    // Standard safe policy: archive instead of hard deleting
-    const event = await archiveEvent(req.params.id, true, req.user?.id);
-    return sendSuccess(res, 'Event archived safely (hard deletion prevented).', { event });
+    const event = await deleteEvent(req.params.id, req.user?.id);
+    return sendSuccess(res, `Event "${event.title}" has been permanently deleted.`, { event });
   } catch (err) {
     next(err);
   }

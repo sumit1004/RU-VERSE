@@ -40,7 +40,7 @@ export function mapApiEventToPublicEvent(apiEvent, index = 0) {
     id: apiEvent.slug || String(apiEvent.id),
     number: num,
     title: apiEvent.title,
-    tagline: apiEvent.tagline || (apiEvent.venue ? `📍 ${apiEvent.venue}` : ''),
+    tagline: apiEvent.tagline || apiEvent.venue || '',
     description: apiEvent.shortDescription || apiEvent.description || '',
     category: catSlug,
     categories: [catSlug],

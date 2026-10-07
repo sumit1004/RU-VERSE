@@ -636,6 +636,21 @@ async function runTests() {
       '41. Admin event registration summary returns accurate capacity & status breakdown'
     );
 
+    // 42. Admin Deletes Registration Record
+    const deleteRegRes = await request('DELETE', `/api/admin/registrations/${firstRegId}`, null, authCookie);
+    assert(
+      deleteRegRes.statusCode === 200 &&
+      deleteRegRes.body.success === true,
+      '42. Admin successfully deletes registration via DELETE /api/admin/registrations/:id'
+    );
+
+    // 42b. Verify Registration is gone (404)
+    const deletedDetailRes = await request('GET', `/api/admin/registrations/${firstRegId}`, null, authCookie);
+    assert(
+      deletedDetailRes.statusCode === 404,
+      '42b. Deleted registration returns 404 on subsequent lookup'
+    );
+
     // =======================================================
     // PHASE 8 & 9: COORDINATOR MANAGEMENT & EVENT-SCOPED RBAC
     // =======================================================
@@ -851,6 +866,21 @@ async function runTests() {
     assert(
       coordAuditAttempt.statusCode === 403,
       '64. Coordinator without audit.view permission cannot access audit logs (403)'
+    );
+
+    // 65. Admin Deletes Coordinator B
+    const deleteCoordRes = await request('DELETE', `/api/admin/coordinators/${coordBId}`, null, authCookie);
+    assert(
+      deleteCoordRes.statusCode === 200 &&
+      deleteCoordRes.body.success === true,
+      '65. Admin successfully deletes coordinator via DELETE /api/admin/coordinators/:id'
+    );
+
+    // 65b. Verify Coordinator B is deleted (404)
+    const deletedCoordLookup = await request('GET', `/api/admin/coordinators/${coordBId}`, null, authCookie);
+    assert(
+      deletedCoordLookup.statusCode === 404,
+      '65b. Deleted coordinator returns 404 on lookup'
     );
 
     console.log(`\n=== COMPLETE TEST SUITE (PHASES 1-9): ${passedCount} PASSED, ${failedCount} FAILED ===\n`);

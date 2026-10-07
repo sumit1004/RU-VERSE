@@ -256,7 +256,7 @@ export default function AdminEventEdit() {
 
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Link to={`/admin/events/${id}/form`} className="admin-btn admin-btn-secondary admin-btn-sm">
-            Form Builder 📝
+            Form Builder
           </Link>
           <Link to={`/admin/events/${id}/registrations`} className="admin-btn admin-btn-secondary admin-btn-sm">
             View Registrations
@@ -292,7 +292,7 @@ export default function AdminEventEdit() {
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.name}{!c.isActive ? ' (Inactive)' : ''}
                   </option>
                 ))}
               </select>

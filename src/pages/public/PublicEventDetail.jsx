@@ -9,6 +9,7 @@ import {
   formatTimeRange,
   getRegistrationStatus,
 } from '../../utils/eventDateTime';
+import EventRegistrationsView from '../../components/main/EventRegistrationsView';
 import './eventDetail.css';
 
 export default function PublicEventDetail() {
@@ -18,6 +19,7 @@ export default function PublicEventDetail() {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showRegistrations, setShowRegistrations] = useState(false);
 
   const loadEvent = async () => {
     try {
@@ -74,7 +76,6 @@ export default function PublicEventDetail() {
       <div className="public-event-detail-page">
         <div className="event-detail-container">
           <div className="event-detail-error-card">
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
             <h2 style={{ color: '#fb7185', fontSize: '1.5rem', marginBottom: '0.75rem', fontWeight: 800 }}>
               Event Unavailable
             </h2>
@@ -83,13 +84,27 @@ export default function PublicEventDetail() {
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={loadEvent} className="event-reg-cta-btn" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}>
-                ↻ Try Again
+                Try Again
               </button>
               <button onClick={handleBackToHome} className="event-back-btn" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}>
                 ← Return to RUVERSE Home
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. In-page Registrations List Sub-View
+  if (showRegistrations) {
+    return (
+      <div className="public-event-detail-page">
+        <div className="event-detail-container" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          <EventRegistrationsView
+            event={event}
+            onBack={() => setShowRegistrations(false)}
+          />
         </div>
       </div>
     );
@@ -107,6 +122,8 @@ export default function PublicEventDetail() {
       : event.registrationType === 'BOTH'
       ? `Individual / Team (${event.teamMinSize || 2}–${event.teamMaxSize || 4})`
       : 'Individual Entry';
+
+  const supportsViewRegistrations = Boolean(event.slug && event.registrationMode !== 'EXTERNAL');
 
   return (
     <div className="public-event-detail-page">
@@ -126,7 +143,7 @@ export default function PublicEventDetail() {
               <span className="event-category-chip">{event.category.name}</span>
             )}
             {event.isFeatured && (
-              <span className="event-featured-chip">★ FEATURED ARENA</span>
+              <span className="event-featured-chip">FEATURED ARENA</span>
             )}
             <span className={`event-status-badge is-${statusInfo.badgeClass}`}>
               <span className="event-status-dot" />
@@ -144,30 +161,30 @@ export default function PublicEventDetail() {
           <div className="event-specs-grid">
             <div className="event-spec-item">
               <span className="event-spec-label">Venue</span>
-              <span className="event-spec-value">📍 {event.venue || 'TBD'}</span>
+              <span className="event-spec-value">{event.venue || 'TBD'}</span>
             </div>
 
             <div className="event-spec-item">
               <span className="event-spec-label">Date</span>
-              <span className="event-spec-value">📅 {formattedDates || 'FEB 2026'}</span>
+              <span className="event-spec-value">{formattedDates || 'FEB 2026'}</span>
             </div>
 
             {formattedTimes && (
               <div className="event-spec-item">
                 <span className="event-spec-label">Time</span>
-                <span className="event-spec-value">⏰ {formattedTimes}</span>
+                <span className="event-spec-value">{formattedTimes}</span>
               </div>
             )}
 
             <div className="event-spec-item">
               <span className="event-spec-label">Registration</span>
-              <span className="event-spec-value">👥 {registrationTypeLabel}</span>
+              <span className="event-spec-value">{registrationTypeLabel}</span>
             </div>
 
             {event.registrationLimit && (
               <div className="event-spec-item">
                 <span className="event-spec-label">Capacity</span>
-                <span className="event-spec-value">🎟️ {event.registrationLimit} Slots Max</span>
+                <span className="event-spec-value">{event.registrationLimit} Slots Max</span>
               </div>
             )}
           </div>
@@ -241,7 +258,7 @@ export default function PublicEventDetail() {
             <p className="event-reg-status-desc">{statusInfo.message}</p>
           </div>
 
-          <div>
+          <div className="event-reg-btn-group">
             {event.registrationMode === 'EXTERNAL' && event.registrationLink ? (
               <a
                 href={event.registrationLink}
@@ -258,6 +275,17 @@ export default function PublicEventDetail() {
             ) : (
               <button disabled className="event-reg-cta-btn is-disabled" title={statusInfo.message}>
                 {statusInfo.buttonLabel}
+              </button>
+            )}
+
+            {supportsViewRegistrations && (
+              <button
+                type="button"
+                className="event-reg-secondary-btn"
+                onClick={() => setShowRegistrations(true)}
+              >
+                <span>View Your Registration</span>
+                <span aria-hidden="true">↗</span>
               </button>
             )}
           </div>

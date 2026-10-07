@@ -67,6 +67,12 @@ export const coordinatorService = {
     });
     return res.data;
   },
+  deleteCoordinator: async (id) => {
+    const res = await request(`/admin/coordinators/${id}`, {
+      method: 'DELETE',
+    });
+    return res.data;
+  },
 };
 
 export default coordinatorService;

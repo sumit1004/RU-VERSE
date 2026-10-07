@@ -9,6 +9,7 @@ import {
   updateCoordinatorPermissions,
   getCoordinatorEvents,
   updateCoordinatorEvents,
+  deleteCoordinator,
 } from '../controllers/coordinator.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requireAdmin } from '../middleware/permission.middleware.js';
@@ -29,6 +30,7 @@ router.get('/:id/permissions', getCoordinatorPermissions);
 router.patch('/:id/permissions', updateCoordinatorPermissions);
 router.get('/:id/events', getCoordinatorEvents);
 router.patch('/:id/events', updateCoordinatorEvents);
+router.delete('/:id', deleteCoordinator);
 
 export default router;
 

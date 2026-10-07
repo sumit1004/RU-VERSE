@@ -2,10 +2,12 @@ import { Router } from 'express';
 import {
   getPublicRegistration,
   submitPublicRegistration,
+  getPublicEventRegistrations,
   getAdminRegistrations,
   getRegistrationDetails,
   updateRegistrationStatus,
   cancelRegistration,
+  deleteRegistrationHandler,
   getEventRegistrations,
   getEventRegistrationSummary,
   exportRegistrations,
@@ -19,6 +21,7 @@ import { registrationRateLimiter } from '../middleware/registration-rate-limit.j
 export const publicRegistrationRouter = Router();
 
 publicRegistrationRouter.get('/:slug/registration', getPublicRegistration);
+publicRegistrationRouter.get('/:slug/registrations', getPublicEventRegistrations);
 publicRegistrationRouter.post('/:slug/registrations', registrationRateLimiter, submitPublicRegistration);
 
 // Admin Registration Router
@@ -56,6 +59,13 @@ adminRegistrationRouter.patch(
   requirePermission('registrations.edit'),
   requireEventAccess('id'),
   cancelRegistration
+);
+
+adminRegistrationRouter.delete(
+  '/:id',
+  requirePermission('registrations.edit'),
+  requireEventAccess('id'),
+  deleteRegistrationHandler
 );
 
 // Admin Event-specific Registration Routes

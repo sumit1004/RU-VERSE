@@ -83,7 +83,6 @@ export default function AdminAuditLogs() {
       <div className="admin-toolbar">
         <div className="admin-toolbar-left">
           <div className="admin-search-wrapper">
-            <span className="admin-search-icon">🔍</span>
             <input
               type="text"
               className="admin-input admin-search-input"
@@ -160,7 +159,6 @@ export default function AdminAuditLogs() {
       ) : logs.length === 0 ? (
         <div className="admin-table-container">
           <div className="admin-empty-state">
-            <div className="admin-empty-icon">📜</div>
             <div className="admin-empty-title">No audit records found</div>
             <div className="admin-empty-desc">
               Audit log entries will appear as system actions, logins, and status transitions occur.

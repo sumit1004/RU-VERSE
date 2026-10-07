@@ -22,13 +22,47 @@ adminCategoryRouter.use(requireAuth);
 
 adminCategoryRouter.get(
   '/',
-  requirePermission('categories.view'),
+  (req, res, next) => {
+    const user = req.user;
+    const hasPerm =
+      user?.role?.slug === 'admin' ||
+      (Array.isArray(user?.permissions) &&
+        (user.permissions.includes('categories.view') ||
+          user.permissions.includes('events.create') ||
+          user.permissions.includes('events.edit') ||
+          user.permissions.includes('events.view')));
+
+    if (!hasPerm) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view categories.',
+      });
+    }
+    next();
+  },
   getAdminCategoriesList
 );
 
 adminCategoryRouter.get(
   '/:id',
-  requirePermission('categories.view'),
+  (req, res, next) => {
+    const user = req.user;
+    const hasPerm =
+      user?.role?.slug === 'admin' ||
+      (Array.isArray(user?.permissions) &&
+        (user.permissions.includes('categories.view') ||
+          user.permissions.includes('events.create') ||
+          user.permissions.includes('events.edit') ||
+          user.permissions.includes('events.view')));
+
+    if (!hasPerm) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view categories.',
+      });
+    }
+    next();
+  },
   getCategoryDetails
 );
 

@@ -15,6 +15,22 @@ export const registrationService = {
     return res.data;
   },
 
+  getPublicEventRegistrations: async (slug, params = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.type && params.type !== 'ALL') query.append('type', params.type);
+    if (params.registrationType && params.registrationType !== 'ALL') query.append('type', params.registrationType);
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.sortBy) query.append('sortBy', params.sortBy);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    const queryString = query.toString();
+    const endpoint = `/events/${slug}/registrations${queryString ? `?${queryString}` : ''}`;
+    const res = await request(endpoint);
+    return res.data;
+  },
+
   // Admin APIs
   getRegistrations: async (params = {}) => {
     const query = new URLSearchParams();
@@ -72,6 +88,13 @@ export const registrationService = {
 
   getEventRegistrationSummary: async (eventId) => {
     const res = await request(`/admin/events/${eventId}/registration-summary`);
+    return res.data;
+  },
+
+  deleteRegistration: async (id) => {
+    const res = await request(`/admin/registrations/${id}`, {
+      method: 'DELETE',
+    });
     return res.data;
   },
 };

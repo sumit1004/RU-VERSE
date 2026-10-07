@@ -10,13 +10,13 @@ export const universeSections = [
   {
     id: 'ru-verse',
     sector: '01',
-    title: 'RU VERSE',
-    tagline: 'Where Technology Meets Imagination',
+    title: 'About RU',
+    tagline: 'Legacy Wahi Sapne Naye',
     entry: 'top-left',
     color: '#5eb9ff',
     model: ASSETS.ruVerse,
-    description: 'A place to build, compete, experiment, explore and create for Central India\'s premier technical festival.',
-    cta: 'EXPLORE RU VERSE',
+    description: 'Rungta University came into being only after Rungta Group of Institutions developed enough expertise and Academic Maturity in last 26 years, now ready to leverage upon it and succeeding in nurturing Future ready professionals equipped with future ready skills.',
+    cta: 'EXPLORE RU',
     targetAnchor: '#section-about',
     coordinates: '19.12° N / 81.36° E'
   },

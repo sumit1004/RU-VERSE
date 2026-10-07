@@ -25,6 +25,7 @@ export const validateEvent = (req, res, next) => {
   } = req.body;
 
   const errors = {};
+  const isPost = req.method === 'POST';
 
   // Title
   if (!title || typeof title !== 'string' || !title.trim()) {
@@ -53,28 +54,41 @@ export const validateEvent = (req, res, next) => {
 
   // Dates
   const startDate = startDateTime ? new Date(startDateTime) : null;
-  const endDate = endDateTime ? new Date(endDateTime) : null;
-  const regStartDate = registrationStart ? new Date(registrationStart) : null;
-  const regEndDate = registrationEnd ? new Date(registrationEnd) : null;
+  let endDate = endDateTime ? new Date(endDateTime) : null;
+  let regStartDate = registrationStart ? new Date(registrationStart) : null;
+  let regEndDate = registrationEnd ? new Date(registrationEnd) : null;
 
   if (!startDate || isNaN(startDate.getTime())) {
     errors.startDateTime = 'Valid event start date and time is required.';
   }
-  if (!endDate || isNaN(endDate.getTime())) {
+
+  // If end date is missing on create, default to 2 hours after start
+  if ((!endDate || isNaN(endDate.getTime())) && isPost && startDate && !isNaN(startDate.getTime())) {
+    endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  } else if (!endDate || isNaN(endDate.getTime())) {
     errors.endDateTime = 'Valid event end date and time is required.';
   }
+
   if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
     if (endDate < startDate) {
       errors.endDateTime = 'Event end time must be after start time.';
     }
   }
 
-  if (!regStartDate || isNaN(regStartDate.getTime())) {
+  // If registration start is missing on create, default to now
+  if ((!regStartDate || isNaN(regStartDate.getTime())) && isPost) {
+    regStartDate = new Date();
+  } else if (!regStartDate || isNaN(regStartDate.getTime())) {
     errors.registrationStart = 'Valid registration start date and time is required.';
   }
-  if (!regEndDate || isNaN(regEndDate.getTime())) {
+
+  // If registration end is missing on create, default to event start time
+  if ((!regEndDate || isNaN(regEndDate.getTime())) && isPost && startDate && !isNaN(startDate.getTime())) {
+    regEndDate = new Date(startDate.getTime());
+  } else if (!regEndDate || isNaN(regEndDate.getTime())) {
     errors.registrationEnd = 'Valid registration end date and time is required.';
   }
+
   if (regStartDate && regEndDate && !isNaN(regStartDate.getTime()) && !isNaN(regEndDate.getTime())) {
     if (regEndDate < regStartDate) {
       errors.registrationEnd = 'Registration end time must be after registration start time.';
@@ -93,8 +107,8 @@ export const validateEvent = (req, res, next) => {
   let cleanMaxSize = null;
 
   if (cleanRegType === 'TEAM' || cleanRegType === 'BOTH') {
-    const min = parseInt(teamMinSize, 10);
-    const max = parseInt(teamMaxSize, 10);
+    const min = teamMinSize !== undefined && teamMinSize !== null ? parseInt(teamMinSize, 10) : 2;
+    const max = teamMaxSize !== undefined && teamMaxSize !== null ? parseInt(teamMaxSize, 10) : 4;
 
     if (isNaN(min) || min < 1) {
       errors.teamMinSize = 'Minimum team size must be at least 1.';
@@ -138,19 +152,19 @@ export const validateEvent = (req, res, next) => {
   req.body.teamMinSize = cleanMinSize;
   req.body.teamMaxSize = cleanMaxSize;
   req.body.registrationLimit = cleanRegLimit;
-  req.body.displayOrder = displayOrder !== undefined ? parseInt(displayOrder, 10) || 0 : (req.method === 'POST' ? 0 : undefined);
+  req.body.displayOrder = displayOrder !== undefined ? parseInt(displayOrder, 10) || 0 : (isPost ? 0 : undefined);
   
   if (isFeatured !== undefined) req.body.isFeatured = Boolean(isFeatured);
-  else if (req.method === 'POST') req.body.isFeatured = false;
+  else if (isPost) req.body.isFeatured = false;
 
   if (isOpenForAll !== undefined) req.body.isOpenForAll = Boolean(isOpenForAll);
-  else if (req.method === 'POST') req.body.isOpenForAll = true;
+  else if (isPost) req.body.isOpenForAll = true;
 
   if (isActive !== undefined) req.body.isActive = Boolean(isActive);
-  else if (req.method === 'POST') req.body.isActive = true;
+  else if (isPost) req.body.isActive = true;
 
   if (isPublished !== undefined) req.body.isPublished = Boolean(isPublished);
-  else if (req.method === 'POST') req.body.isPublished = false;
+  else if (isPost) req.body.isPublished = false;
 
   const validModes = ['INTERNAL', 'EXTERNAL'];
   if (registrationMode !== undefined) {
@@ -160,7 +174,7 @@ export const validateEvent = (req, res, next) => {
     } else {
       req.body.registrationMode = cleanMode;
     }
-  } else if (req.method === 'POST') {
+  } else if (isPost) {
     req.body.registrationMode = 'INTERNAL';
   }
 

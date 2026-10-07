@@ -350,6 +350,40 @@
   transform: none;
 }
 
+.event-reg-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.event-reg-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.6rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 229, 255, 0.15);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.event-reg-secondary-btn:hover {
+  background: #00e5ff;
+  color: #01040a;
+  border-color: #00e5ff;
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+  transform: translateY(-2px);
+}
+
 /* 6. Loading & Error States */
 .event-detail-loading-box {
   min-height: 80vh;

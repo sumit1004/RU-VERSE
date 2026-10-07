@@ -37,20 +37,32 @@ export default function AdminEventCreate() {
   const [isOpenForAll, setIsOpenForAll] = useState(true);
   const [isPublished, setIsPublished] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState({});
+
   const showToast = (type, message) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 5000);
   };
 
   useEffect(() => {
     async function loadCategories() {
       try {
         setLoading(true);
-        const cats = await categoryService.getAdminCategories();
-        const list = Array.isArray(cats) ? cats : [];
-        setCategories(list);
-        if (list.length > 0) {
-          setCategoryId(list[0].id);
+        let list = [];
+        try {
+          const cats = await categoryService.getAdminCategories();
+          list = Array.isArray(cats) ? cats : [];
+        } catch {
+          // Fallback to public categories if coordinator/user lacks categories.admin permission
+          const pubCats = await categoryService.getCategories();
+          list = Array.isArray(pubCats) ? pubCats : [];
+        }
+
+        const activeCats = list.filter((c) => c.isActive);
+        const available = activeCats.length > 0 ? activeCats : list;
+        setCategories(available);
+        if (available.length > 0) {
+          setCategoryId(available[0].id);
         }
       } catch (err) {
         showToast('error', 'Failed to load categories.');
@@ -61,27 +73,36 @@ export default function AdminEventCreate() {
     loadCategories();
   }, []);
 
+  const handleStartDateChange = (val) => {
+    setStartDateTime(val);
+    if (val && !endDateTime) {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        d.setHours(d.getHours() + 2);
+        const pad = (n) => String(n).padStart(2, '0');
+        const formatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        setEndDateTime(formatted);
+      }
+    }
+    if (val && !registrationEnd) {
+      setRegistrationEnd(val);
+    }
+  };
+
   const handleSubmit = async (e, publishStatus = false) => {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (!title.trim()) {
-      showToast('error', 'Event title is required.');
-      return;
-    }
-    if (!description.trim()) {
-      showToast('error', 'Event description is required.');
-      return;
-    }
-    if (!categoryId) {
-      showToast('error', 'Please select a category.');
-      return;
-    }
-    if (!venue.trim()) {
-      showToast('error', 'Venue location is required.');
-      return;
-    }
-    if (!startDateTime) {
-      showToast('error', 'Event start date/time is required.');
+    const errors = {};
+    if (!title.trim()) errors.title = 'Event title is required.';
+    if (!description.trim()) errors.description = 'Event description is required.';
+    if (!categoryId) errors.categoryId = 'Please select a category.';
+    if (!venue.trim()) errors.venue = 'Venue location is required.';
+    if (!startDateTime) errors.startDateTime = 'Event start date/time is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast('error', Object.values(errors)[0]);
       return;
     }
 
@@ -114,7 +135,14 @@ export default function AdminEventCreate() {
         navigate(`/admin/events/${res.id}`);
       }, 800);
     } catch (err) {
-      showToast('error', err.message || 'Failed to create event.');
+      console.error('Event creation error:', err);
+      if (err.errors && typeof err.errors === 'object') {
+        setFieldErrors(err.errors);
+        const errorMessages = Object.values(err.errors).join(' ');
+        showToast('error', errorMessages || err.message || 'Validation failed for event data.');
+      } else {
+        showToast('error', err.message || 'Failed to create event.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -223,28 +251,38 @@ export default function AdminEventCreate() {
               <label className="admin-label">Event Start Date & Time *</label>
               <input
                 type="datetime-local"
-                className="admin-input"
+                className={`admin-input ${fieldErrors.startDateTime ? 'is-invalid' : ''}`}
                 value={startDateTime}
-                onChange={(e) => setStartDateTime(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
                 required
               />
+              {fieldErrors.startDateTime && (
+                <div style={{ color: '#f43f5e', fontSize: '0.75rem', marginTop: '4px' }}>
+                  {fieldErrors.startDateTime}
+                </div>
+              )}
             </div>
 
             <div className="admin-form-group">
               <label className="admin-label">Event End Date & Time</label>
               <input
                 type="datetime-local"
-                className="admin-input"
+                className={`admin-input ${fieldErrors.endDateTime ? 'is-invalid' : ''}`}
                 value={endDateTime}
                 onChange={(e) => setEndDateTime(e.target.value)}
               />
+              {fieldErrors.endDateTime && (
+                <div style={{ color: '#f43f5e', fontSize: '0.75rem', marginTop: '4px' }}>
+                  {fieldErrors.endDateTime}
+                </div>
+              )}
             </div>
 
             <div className="admin-form-group">
               <label className="admin-label">Registration Opens</label>
               <input
                 type="datetime-local"
-                className="admin-input"
+                className={`admin-input ${fieldErrors.registrationStart ? 'is-invalid' : ''}`}
                 value={registrationStart}
                 onChange={(e) => setRegistrationStart(e.target.value)}
               />

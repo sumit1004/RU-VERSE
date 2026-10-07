@@ -2,6 +2,7 @@ import app from './src/app.js';
 import { env } from './src/config/env.js';
 import { prisma } from './src/config/database.js';
 
+// Server entry point for RU VERSE backend API
 const PORT = env.PORT || 5000;
 
 async function startServer() {

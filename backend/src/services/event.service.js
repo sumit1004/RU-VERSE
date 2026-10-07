@@ -1,5 +1,6 @@
 import { prisma } from '../config/database.js';
 import { slugify } from './category.service.js';
+import { getOrCreateEventForm } from './form.service.js';
 
 /**
  * Calculate real-time registration status based on event dates and publication state
@@ -98,6 +99,9 @@ export const getPublicEvents = async ({ categorySlug = null, search = null } = {
       isOpenForAll: true,
       displayOrder: true,
       registrationLimit: true,
+      isPublished: true,
+      isActive: true,
+      archivedAt: true,
       category: {
         select: {
           id: true,
@@ -150,6 +154,9 @@ export const getPublicEventBySlug = async (slug) => {
       isOpenForAll: true,
       displayOrder: true,
       registrationLimit: true,
+      isPublished: true,
+      isActive: true,
+      archivedAt: true,
       category: {
         select: {
           id: true,
@@ -315,7 +322,7 @@ export const createEvent = async (data, userId) => {
 
   const slug = await generateUniqueEventSlug(data.title);
 
-  return await prisma.event.create({
+  const newEvent = await prisma.event.create({
     data: {
       title: data.title,
       slug,
@@ -346,6 +353,37 @@ export const createEvent = async (data, userId) => {
       creator: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // If internal event, initialize baseline registration form
+  if (newEvent.registrationMode !== 'EXTERNAL') {
+    try {
+      await getOrCreateEventForm(newEvent.id, userId, newEvent.isPublished ? 'PUBLISHED' : 'DRAFT');
+    } catch {
+      // Form initialization fallback
+    }
+  }
+
+  // If creator is a coordinator, automatically assign them to this event
+  if (userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
+      if (user && user.role?.slug === 'coordinator') {
+        await prisma.eventCoordinator.create({
+          data: {
+            eventId: newEvent.id,
+            userId: user.id,
+          },
+        });
+      }
+    } catch {
+      // Ignore duplicate or non-critical coordinator assignment errors
+    }
+  }
+
+  return newEvent;
 };
 
 /**
@@ -361,6 +399,7 @@ export const updateEvent = async (id, data, userId) => {
 
   const existing = await prisma.event.findUnique({
     where: { id: eventId },
+    include: { registrationForm: true },
   });
   if (!existing) {
     const error = new Error('Event not found.');
@@ -387,7 +426,7 @@ export const updateEvent = async (id, data, userId) => {
     slug = await generateUniqueEventSlug(data.title, eventId);
   }
 
-  return await prisma.event.update({
+  const updated = await prisma.event.update({
     where: { id: eventId },
     data: {
       title: data.title !== undefined ? data.title : existing.title,
@@ -420,6 +459,20 @@ export const updateEvent = async (id, data, userId) => {
       registrationForm: true,
     },
   });
+
+  // If published and internal, ensure registration form is active
+  if (updated.isPublished && updated.registrationMode !== 'EXTERNAL') {
+    if (!existing.registrationForm) {
+      await getOrCreateEventForm(updated.id, userId, 'PUBLISHED');
+    } else if (existing.registrationForm.status === 'DRAFT') {
+      await prisma.registrationForm.update({
+        where: { id: existing.registrationForm.id },
+        data: { status: 'PUBLISHED', publishedAt: new Date(), updatedById: userId || null },
+      });
+    }
+  }
+
+  return updated;
 };
 
 /**
@@ -427,7 +480,10 @@ export const updateEvent = async (id, data, userId) => {
  */
 export const updateEventPublishStatus = async (id, isPublished, userId) => {
   const eventId = parseInt(id, 10);
-  const existing = await prisma.event.findUnique({ where: { id: eventId } });
+  const existing = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: { registrationForm: true },
+  });
   if (!existing) {
     const error = new Error('Event not found.');
     error.statusCode = 404;
@@ -440,7 +496,7 @@ export const updateEventPublishStatus = async (id, isPublished, userId) => {
     throw error;
   }
 
-  return await prisma.event.update({
+  const updatedEvent = await prisma.event.update({
     where: { id: eventId },
     data: {
       isPublished: Boolean(isPublished),
@@ -448,8 +504,23 @@ export const updateEventPublishStatus = async (id, isPublished, userId) => {
     },
     include: {
       category: true,
+      registrationForm: true,
     },
   });
+
+  // When publishing an event, ensure its registration form is also initialized and published
+  if (Boolean(isPublished) && updatedEvent.registrationMode !== 'EXTERNAL') {
+    if (!existing.registrationForm) {
+      await getOrCreateEventForm(eventId, userId, 'PUBLISHED');
+    } else if (existing.registrationForm.status === 'DRAFT') {
+      await prisma.registrationForm.update({
+        where: { id: existing.registrationForm.id },
+        data: { status: 'PUBLISHED', publishedAt: new Date(), updatedById: userId || null },
+      });
+    }
+  }
+
+  return updatedEvent;
 };
 
 /**
@@ -538,5 +609,64 @@ export const archiveEvent = async (id, shouldArchive = true, userId) => {
       updatedById: userId || null,
     },
     include: { category: true },
+  });
+};
+
+/**
+ * Permanently delete an event
+ */
+export const deleteEvent = async (id, userId) => {
+  const eventId = parseInt(id, 10);
+  if (isNaN(eventId)) {
+    const error = new Error('Invalid event ID.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existing = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      _count: {
+        select: { registrations: true },
+      },
+    },
+  });
+
+  if (!existing) {
+    const error = new Error('Event not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (existing._count.registrations > 0) {
+    const error = new Error(
+      `Cannot permanently delete event "${existing.title}" because it has ${existing._count.registrations} registered participant(s). Please archive it instead.`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Delete form fields & form if any
+  const form = await prisma.registrationForm.findUnique({
+    where: { eventId },
+  });
+
+  if (form) {
+    await prisma.registrationFormField.deleteMany({
+      where: { formId: form.id },
+    });
+    await prisma.registrationForm.delete({
+      where: { id: form.id },
+    });
+  }
+
+  // Delete coordinator assignments if any
+  await prisma.eventCoordinator.deleteMany({
+    where: { eventId },
+  });
+
+  // Delete the event
+  return await prisma.event.delete({
+    where: { id: eventId },
   });
 };

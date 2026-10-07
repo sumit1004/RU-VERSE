@@ -53,6 +53,9 @@ export const getAdminCategories = async () => {
           email: true,
         },
       },
+      _count: {
+        select: { events: true },
+      },
     },
     orderBy: [
       { displayOrder: 'asc' },
@@ -76,6 +79,9 @@ export const getCategoryById = async (id) => {
       },
       updater: {
         select: { id: true, name: true, email: true },
+      },
+      _count: {
+        select: { events: true },
       },
     },
   });
@@ -250,7 +256,18 @@ export const deleteCategory = async (id) => {
   }
 
   if (existing._count?.events > 0) {
-    const error = new Error('Category cannot be deleted because events are assigned to it. Please deactivate the category instead.');
+    const assignedEvents = await prisma.event.findMany({
+      where: { categoryId },
+      select: { id: true, title: true, isPublished: true, isActive: true, archivedAt: true },
+      take: 5,
+    });
+    const eventTitles = assignedEvents
+      .map((e) => `"${e.title}"${e.archivedAt ? ' (Archived)' : (!e.isPublished ? ' (Draft)' : (!e.isActive ? ' (Inactive)' : ''))}`)
+      .join(', ');
+    const moreText = existing._count.events > 5 ? ` and ${existing._count.events - 5} more` : '';
+    const error = new Error(
+      `Category cannot be deleted because ${existing._count.events} event(s) are assigned to it: ${eventTitles}${moreText}. Please delete or reassign those events first, or deactivate this category instead.`
+    );
     error.statusCode = 400;
     throw error;
   }

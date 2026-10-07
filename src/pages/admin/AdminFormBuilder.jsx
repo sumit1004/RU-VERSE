@@ -257,10 +257,10 @@ export default function AdminFormBuilder() {
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <StatusBadge status={form?.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'} />
           <button onClick={() => setIsPreviewOpen(true)} className="admin-btn admin-btn-secondary admin-btn-sm">
-            👁️ Preview
+            Preview
           </button>
           <button onClick={handlePublishForm} className="admin-btn admin-btn-primary admin-btn-sm">
-            🚀 {form?.status === 'PUBLISHED' ? 'Re-Publish Form' : 'Publish Form'}
+            {form?.status === 'PUBLISHED' ? 'Re-Publish Form' : 'Publish Form'}
           </button>
         </div>
       </div>

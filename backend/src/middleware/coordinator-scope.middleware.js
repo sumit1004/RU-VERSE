@@ -17,7 +17,7 @@ import { sendError } from '../utils/response.js';
  *        ↓
  * Allow / Deny
  */
-export const requireEventAccess = (paramName = 'eventId') => {
+export const requireEventAccess = (paramName = 'eventId', paramType = 'event') => {
   return async (req, res, next) => {
     try {
       const user = req.user;
@@ -31,11 +31,15 @@ export const requireEventAccess = (paramName = 'eventId') => {
       }
 
       // 2. If Coordinator role, check assigned event
-      let eventId = req.params[paramName] || req.params.eventId || req.params.id || req.query.eventId || req.body.eventId;
+      let eventId = null;
+      const isRegistrationRoute =
+        paramType === 'registration' ||
+        (req.baseUrl && req.baseUrl.includes('/registrations')) ||
+        (req.originalUrl && req.originalUrl.includes('/registrations'));
 
-      // If accessing a registration endpoint like /admin/registrations/:id
-      if (!eventId && req.params.id) {
-        const regId = parseInt(req.params.id, 10);
+      if (isRegistrationRoute) {
+        const rawId = req.params[paramName] || req.params.id;
+        const regId = parseInt(rawId, 10);
         if (!isNaN(regId)) {
           const reg = await prisma.registration.findUnique({
             where: { id: regId },
@@ -45,6 +49,8 @@ export const requireEventAccess = (paramName = 'eventId') => {
             eventId = reg.eventId;
           }
         }
+      } else {
+        eventId = req.params[paramName] || req.params.eventId || req.query.eventId || req.body.eventId;
       }
 
       const parsedEventId = parseInt(eventId, 10);

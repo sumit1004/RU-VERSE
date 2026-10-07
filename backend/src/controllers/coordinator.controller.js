@@ -92,3 +92,13 @@ export const updateCoordinatorEvents = async (req, res, next) => {
     next(err);
   }
 };
+
+export const deleteCoordinator = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const data = await coordinatorService.deleteCoordinator(id, req.user.id, req);
+    return sendSuccess(res, 'Coordinator deleted successfully.', data);
+  } catch (err) {
+    next(err);
+  }
+};

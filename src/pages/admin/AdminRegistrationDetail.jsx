@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -8,6 +8,7 @@ import '../../styles/admin.css';
 
 export default function AdminRegistrationDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { hasPermission, currentUser } = useAuth();
   const isAdmin = currentUser?.role?.slug === 'admin';
 
@@ -21,6 +22,10 @@ export default function AdminRegistrationDetail() {
   const [newStatus, setNewStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Delete Modal State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingReg, setDeletingReg] = useState(false);
 
   const canEdit = hasPermission('registrations.edit') || isAdmin;
 
@@ -63,6 +68,19 @@ export default function AdminRegistrationDetail() {
       showToast('error', err.message || 'Failed to update status.');
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleDeleteRegistration = async () => {
+    try {
+      setDeletingReg(true);
+      await registrationService.deleteRegistration(registration.id);
+      navigate('/admin/registrations');
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete registration.');
+      setShowDeleteModal(false);
+    } finally {
+      setDeletingReg(false);
     }
   };
 
@@ -117,12 +135,20 @@ export default function AdminRegistrationDetail() {
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <StatusBadge status={registration.status} />
           {canEdit && (
-            <button
-              onClick={() => setShowStatusModal(true)}
-              className="admin-btn admin-btn-secondary admin-btn-sm"
-            >
-              Update Status
-            </button>
+            <>
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className="admin-btn admin-btn-secondary admin-btn-sm"
+              >
+                Update Status
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                Delete
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -190,7 +216,7 @@ export default function AdminRegistrationDetail() {
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ad-accent)' }}>
-                  {idx === 0 && registration.teamName ? '👑 Team Leader' : `Participant #${idx + 1}`}
+                  {idx === 0 && registration.teamName ? 'Team Leader' : `Participant #${idx + 1}`}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)' }}>
                   Order: {p.participantOrder || idx + 1}
@@ -325,6 +351,47 @@ export default function AdminRegistrationDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE REGISTRATION CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
+                Delete Registration
+              </h3>
+              <button onClick={() => setShowDeleteModal(false)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete registration <strong>#{registration.registrationNumber}</strong> for <strong>"{registration.event?.title}"</strong>?
+              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                This action will delete all participant entries, dynamic form field responses, and verification records associated with this registration. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="admin-btn admin-btn-secondary admin-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingReg}
+                onClick={handleDeleteRegistration}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {deletingReg ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

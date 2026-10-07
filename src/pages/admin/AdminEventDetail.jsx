@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { eventService } from '../../services/eventService';
+import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/admin/StatusBadge';
+import Toast from '../../components/admin/Toast';
 import '../../styles/admin.css';
 
 export default function AdminEventDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { hasPermission, currentUser } = useAuth();
+  const isAdmin = currentUser?.role?.slug === 'admin';
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canEdit = hasPermission('events.edit') || isAdmin;
+  const canArchive = hasPermission('events.archive') || isAdmin;
+  const canDelete = hasPermission('events.archive') || isAdmin;
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const loadEvent = async () => {
     try {
@@ -40,6 +60,21 @@ export default function AdminEventDetail() {
       loadEvent();
     }
   }, [id]);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await eventService.deleteEvent(id);
+      showToast('success', `Event "${event.title}" deleted permanently.`);
+      setTimeout(() => {
+        navigate('/admin/events');
+      }, 700);
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete event.');
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -82,6 +117,8 @@ export default function AdminEventDetail() {
 
   return (
     <div style={{ maxWidth: '840px' }}>
+      <Toast toast={toast} />
+
       {/* Page Header */}
       <div className="admin-page-header">
         <div>
@@ -100,17 +137,28 @@ export default function AdminEventDetail() {
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <StatusBadge status={event.isPublished ? 'PUBLISHED' : 'DRAFT'} />
-          {event.isFeatured && <StatusBadge status="ACTIVE" label="★ FEATURED" />}
+          {event.isFeatured && <StatusBadge status="ACTIVE" label="FEATURED" />}
 
           <Link to={`/admin/events/${id}/form`} className="admin-btn admin-btn-secondary admin-btn-sm">
-            Form Builder 📝
+            Form Builder
           </Link>
           <Link to={`/admin/events/${id}/registrations`} className="admin-btn admin-btn-secondary admin-btn-sm">
             Registrations
           </Link>
-          <Link to={`/admin/events/${id}/edit`} className="admin-btn admin-btn-primary admin-btn-sm">
-            Edit
-          </Link>
+          {canEdit && (
+            <Link to={`/admin/events/${id}/edit`} className="admin-btn admin-btn-primary admin-btn-sm">
+              Edit
+            </Link>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="admin-btn admin-btn-ghost admin-btn-sm"
+              style={{ color: 'var(--ad-danger-text)' }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -121,7 +169,7 @@ export default function AdminEventDetail() {
           <div>
             <span className="admin-label">Venue Location</span>
             <div style={{ fontSize: '0.875rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
-              📍 {event.venue || 'TBD'}
+              {event.venue || 'TBD'}
             </div>
           </div>
           <div>
@@ -133,7 +181,7 @@ export default function AdminEventDetail() {
           <div>
             <span className="admin-label">Event Date & Time</span>
             <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)', marginTop: '0.15rem' }}>
-              📅 {event.startDateTime ? new Date(event.startDateTime).toLocaleString() : 'TBD'}
+              {event.startDateTime ? new Date(event.startDateTime).toLocaleString() : 'TBD'}
             </div>
           </div>
           <div>
@@ -171,6 +219,41 @@ export default function AdminEventDetail() {
           {event.description}
         </div>
       </div>
+
+      {/* DELETE CONFIRM MODAL */}
+      {isDeleteModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>Delete Event</h3>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete <strong>{event.title}</strong>?
+              </p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', margin: 0 }}>
+                This action is irreversible. Events with registered participants cannot be deleted and must be archived instead.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button type="button" onClick={() => setIsDeleteModalOpen(false)} className="admin-btn admin-btn-secondary admin-btn-sm">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -553,9 +553,16 @@
   margin: 0;
 }
 
-/* Card Action Button */
+/* Card Action Buttons */
 .event-card-footer {
   margin-top: auto;
+}
+
+.event-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .event-card-btn {
@@ -609,6 +616,49 @@
   color: #8ed1ff;
   background: rgba(142, 209, 255, 0.04);
   pointer-events: none;
+}
+
+.event-card-view-reg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  background: rgba(142, 209, 255, 0.05);
+  border: 1px solid rgba(142, 209, 255, 0.25);
+  border-radius: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #8ed1ff;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.event-card-view-reg-btn .card-btn-arrow {
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.event-card-view-reg-btn:hover {
+  background: rgba(0, 229, 255, 0.12);
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
+}
+
+.event-card-view-reg-btn:hover .card-btn-arrow {
+  transform: translate(2px, -2px);
+}
+
+.event-card-view-reg-btn:focus-visible {
+  outline: 2px solid #00e5ff;
+  outline-offset: 2px;
 }
 
 /* --------------------------------------------------------------------------

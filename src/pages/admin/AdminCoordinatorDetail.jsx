@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import coordinatorService from '../../services/coordinatorService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
+import Toast from '../../components/admin/Toast.jsx';
 import '../../styles/admin.css';
 
 export default function AdminCoordinatorDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role?.slug === 'admin';
+
   const [coordinator, setCoordinator] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  // Delete Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     loadCoordinator();
@@ -25,6 +41,19 @@ export default function AdminCoordinatorDetail() {
       setError(err.message || 'Coordinator account not found.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteCoordinator = async () => {
+    try {
+      setDeleting(true);
+      await coordinatorService.deleteCoordinator(coordinator.id);
+      navigate('/admin/coordinators');
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete coordinator.');
+      setShowDeleteModal(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -59,6 +88,8 @@ export default function AdminCoordinatorDetail() {
 
   return (
     <div style={{ maxWidth: '840px' }}>
+      <Toast toast={toast} />
+
       {/* Page Header */}
       <div className="admin-page-header">
         <div>
@@ -77,6 +108,14 @@ export default function AdminCoordinatorDetail() {
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <StatusBadge status={coordinator.status} />
+          {isAdmin && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="admin-btn admin-btn-danger admin-btn-sm"
+            >
+              Delete Coordinator
+            </button>
+          )}
         </div>
       </div>
 
@@ -140,7 +179,7 @@ export default function AdminCoordinatorDetail() {
                   {ev.title}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--ad-text-muted)', marginTop: '0.2rem' }}>
-                  {ev.category?.name} • 📍 {ev.venue || 'TBD'}
+                  {ev.category?.name} • {ev.venue || 'TBD'}
                 </div>
               </div>
             ))}
@@ -182,6 +221,47 @@ export default function AdminCoordinatorDetail() {
           </div>
         )}
       </div>
+
+      {/* DELETE MODAL */}
+      {showDeleteModal && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
+                Delete Coordinator
+              </h3>
+              <button onClick={() => setShowDeleteModal(false)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete coordinator <strong>{coordinator.name}</strong> ({coordinator.email})?
+              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                This action will revoke all permissions, remove assigned events, and permanently delete their login credentials. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="admin-btn admin-btn-secondary admin-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteCoordinator}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {deleting ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

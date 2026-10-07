@@ -221,7 +221,7 @@ export function getRegistrationStatus(event) {
     badgeText: 'REGISTRATION OPEN',
     headline: 'Registration is Open',
     message: formattedDeadline ? `Registration closes on ${formattedDeadline} (IST).` : 'Registration is currently open for submissions.',
-    buttonLabel: 'Register Now 🚀',
+    buttonLabel: 'Register Now',
     isOpen: true,
     canRegister: true,
     deadline: formattedDeadline,

@@ -6,6 +6,7 @@ import { adaptApiEvents, adaptApiCategories } from '../../utils/eventAdapter';
 import EventSearch from './EventSearch';
 import EventFilters from './EventFilters';
 import EventCard from './EventCard';
+import EventRegistrationsView from './EventRegistrationsView';
 import './EventsModal.css';
 
 /**
@@ -14,6 +15,7 @@ import './EventsModal.css';
  * - Interactive technical search bar with live letter-by-letter filtering & top 5 suggestions.
  * - Category filtering working seamlessly alongside search with live database categories.
  * - Zero dummy data; strictly connected to live published events.
+ * - Seamless in-modal transition to view privacy-safe event registrations.
  */
 export default function EventsModal({ isOpen, onClose }) {
   const closeBtnRef = useRef(null);
@@ -25,6 +27,7 @@ export default function EventsModal({ isOpen, onClose }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [viewingRegistrationsEvent, setViewingRegistrationsEvent] = useState(null);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -64,6 +67,7 @@ export default function EventsModal({ isOpen, onClose }) {
       fetchLiveEvents();
       setSelectedCategory('all');
       setSearchQuery('');
+      setViewingRegistrationsEvent(null);
       if (scrollAreaRef.current) {
         scrollAreaRef.current.scrollTop = 0;
       }
@@ -144,7 +148,11 @@ export default function EventsModal({ isOpen, onClose }) {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        if (viewingRegistrationsEvent) {
+          setViewingRegistrationsEvent(null);
+        } else {
+          onClose();
+        }
       }
     };
 
@@ -155,7 +163,7 @@ export default function EventsModal({ isOpen, onClose }) {
       document.documentElement.style.overflow = previousDocOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, viewingRegistrationsEvent]);
 
   if (!isOpen) return null;
 
@@ -192,7 +200,7 @@ export default function EventsModal({ isOpen, onClose }) {
       {/* Modal Dialog Panel */}
       <div
         ref={modalRef}
-        className="events-modal"
+        className={`events-modal ${viewingRegistrationsEvent ? 'is-viewing-reg' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="events-modal-title"
@@ -204,105 +212,119 @@ export default function EventsModal({ isOpen, onClose }) {
         <div className="modal-corner btm-l" aria-hidden="true" />
         <div className="modal-corner btm-r" aria-hidden="true" />
 
-        {/* 1. Modal Header (Pinned at Top) */}
-        <div className="events-modal-header">
-          <div className="modal-header-left">
-            <div className="modal-tag">
-              <span className="modal-tag-dot" />
-              <span>EVENT DATABASE // 2026</span>
-            </div>
-            <h2 id="events-modal-title" className="events-modal-title">
-              RUVERSE EVENTS
-            </h2>
-            <p className="events-modal-subtitle">
-              Explore the official galaxy of technical, robotics, esports and departmental arenas.
-            </p>
+        {viewingRegistrationsEvent ? (
+          /* Sub-View: Event Registrations List */
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+            <EventRegistrationsView
+              event={viewingRegistrationsEvent}
+              onBack={() => setViewingRegistrationsEvent(null)}
+            />
           </div>
+        ) : (
+          /* Main View: Event Cards Grid & Filter HUD */
+          <>
+            {/* 1. Modal Header (Pinned at Top) */}
+            <div className="events-modal-header">
+              <div className="modal-header-left">
+                <div className="modal-tag">
+                  <span className="modal-tag-dot" />
+                  <span>EVENT DATABASE // 2026</span>
+                </div>
+                <h2 id="events-modal-title" className="events-modal-title">
+                  RUVERSE EVENTS
+                </h2>
+                <p className="events-modal-subtitle">
+                  Explore the official galaxy of technical, robotics, esports and departmental arenas.
+                </p>
+              </div>
 
-          <button
-            ref={closeBtnRef}
-            type="button"
-            className="events-modal-close"
-            onClick={onClose}
-            aria-label="Close events modal"
-          >
-            <span>CLOSE</span>
-            <span className="close-x" aria-hidden="true">×</span>
-          </button>
-        </div>
+              <button
+                ref={closeBtnRef}
+                type="button"
+                className="events-modal-close"
+                onClick={onClose}
+                aria-label="Close events modal"
+              >
+                <span>CLOSE</span>
+                <span className="close-x" aria-hidden="true">×</span>
+              </button>
+            </div>
 
-        {/* 2. Controls Row: Search Box + Category Filter Tabs (Live Real-time Data) */}
-        <div className="events-modal-controls-bar">
-          <EventSearch
-            events={eventsList}
-            searchQuery={searchQuery}
-            onSearchChange={handleSearchChange}
-            onSelectSuggestion={handleSelectSuggestion}
-            isMobile={isMobile}
-          />
-          <EventFilters
-            categories={categoriesList}
-            selectedCategory={selectedCategory}
-            onSelectCategory={handleSelectCategory}
-            events={eventsList}
-          />
-        </div>
+            {/* 2. Controls Row: Search Box + Category Filter Tabs (Live Real-time Data) */}
+            <div className="events-modal-controls-bar">
+              <EventSearch
+                events={eventsList}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                onSelectSuggestion={handleSelectSuggestion}
+                isMobile={isMobile}
+              />
+              <EventFilters
+                categories={categoriesList}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+                events={eventsList}
+              />
+            </div>
 
-        {/* 3. Card Grid Manifest (Internally Scrollable) */}
-        <div className="events-modal-scroll-body" ref={scrollAreaRef}>
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px', color: 'rgba(255,255,255,0.6)' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 12px #6366f1', marginBottom: '1rem', animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
-              <span style={{ fontSize: '0.75rem', letterSpacing: '0.12em', fontFamily: 'monospace', color: '#94a3b8' }}>
-                SYNCING REAL-TIME EVENT MANIFEST...
+            {/* 3. Card Grid Manifest (Internally Scrollable) */}
+            <div className="events-modal-scroll-body" ref={scrollAreaRef}>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px', color: 'rgba(255,255,255,0.6)' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 12px #6366f1', marginBottom: '1rem', animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                  <span style={{ fontSize: '0.75rem', letterSpacing: '0.12em', fontFamily: 'monospace', color: '#94a3b8' }}>
+                    SYNCING REAL-TIME EVENT MANIFEST...
+                  </span>
+                </div>
+              ) : filteredEvents.length > 0 ? (
+                <div className="events-cards-grid">
+                  {filteredEvents.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      categoryLabelMap={categoryLabelMap}
+                      onViewRegistrations={(evt) => setViewingRegistrationsEvent(evt)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="events-empty-state">
+                  <span className="empty-state-tag">// NO EVENT FOUND</span>
+                  <p className="empty-state-desc">
+                    {searchQuery.trim() ? (
+                      <>
+                        No arenas match &quot;{searchQuery}&quot;
+                        {selectedCategory !== 'all'
+                          ? ` in ${selectedCategory.toUpperCase()}`
+                          : ''}.
+                        <br />
+                        <span className="empty-state-sub">
+                          Try searching another keyword or switch category.
+                        </span>
+                      </>
+                    ) : (
+                      'No live festival events currently available under this category.'
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Modal Footer */}
+            <div className="events-modal-footer">
+              <span className="modal-footer-brand">
+                RUVERSE 2026 // RUNGTA INTERNATIONAL SKILLS UNIVERSITY
+              </span>
+              <span className="modal-footer-status">
+                {loading
+                  ? 'SYNCING...'
+                  : searchQuery.trim()
+                  ? `${filteredEvents.length} EVENT${filteredEvents.length === 1 ? '' : 'S'} FOUND`
+                  : `DISPLAYING ${filteredEvents.length} OF ${eventsList.length} ARENAS`}
               </span>
             </div>
-          ) : filteredEvents.length > 0 ? (
-            <div className="events-cards-grid">
-              {filteredEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  categoryLabelMap={categoryLabelMap}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="events-empty-state">
-              <span className="empty-state-tag">// NO EVENT FOUND</span>
-              <p className="empty-state-desc">
-                {searchQuery.trim() ? (
-                  <>
-                    No arenas match &quot;{searchQuery}&quot;
-                    {selectedCategory !== 'all'
-                      ? ` in ${selectedCategory.toUpperCase()}`
-                      : ''}.
-                    <br />
-                    <span className="empty-state-sub">
-                      Try searching another keyword or switch category.
-                    </span>
-                  </>
-                ) : (
-                  'No live festival events currently available under this category.'
-                )}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* 4. Modal Footer */}
-        <div className="events-modal-footer">
-          <span className="modal-footer-brand">
-            RUVERSE 2026 // RUNGTA INTERNATIONAL SKILLS UNIVERSITY
-          </span>
-          <span className="modal-footer-status">
-            {loading
-              ? 'SYNCING...'
-              : searchQuery.trim()
-              ? `${filteredEvents.length} EVENT${filteredEvents.length === 1 ? '' : 'S'} FOUND`
-              : `DISPLAYING ${filteredEvents.length} OF ${eventsList.length} ARENAS`}
-          </span>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

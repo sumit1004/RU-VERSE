@@ -30,6 +30,30 @@ export const submitPublicRegistration = async (req, res, next) => {
 };
 
 /**
+ * GET /api/events/:slug/registrations
+ * Public endpoint to fetch privacy-safe event registrations list
+ */
+export const getPublicEventRegistrations = async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const { search, type, page, limit, sortBy, sortOrder } = req.query;
+
+    const data = await registrationService.getPublicEventRegistrations(slug, {
+      search,
+      type,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    });
+
+    return sendSuccess(res, 'Public registrations retrieved successfully.', data);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/admin/registrations
  * Admin endpoint to list and search all registrations with pagination and filters
  */
@@ -176,6 +200,20 @@ export const exportRegistrations = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename="ruverse_registrations_${Date.now()}.csv"`);
     res.setHeader('X-Total-Count', String(rowCount));
     return res.status(200).send(csvContent);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/admin/registrations/:id
+ * Admin endpoint to permanently delete a registration record
+ */
+export const deleteRegistrationHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await registrationService.deleteRegistration(id, req.user, req);
+    return sendSuccess(res, 'Registration deleted successfully.', result);
   } catch (err) {
     next(err);
   }

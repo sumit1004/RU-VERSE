@@ -118,7 +118,7 @@ export default function ShipCalibrationPanel() {
               className={`freeze-btn ${freezeAnimations ? 'is-frozen' : ''}`}
               onClick={() => setFreezeAnimations(!freezeAnimations)}
             >
-              {freezeAnimations ? '❄ FROZEN' : '▶ LIVE'}
+              {freezeAnimations ? 'FROZEN' : 'LIVE'}
             </button>
           </div>
 
@@ -294,7 +294,7 @@ export default function ShipCalibrationPanel() {
           {/* 8. Action Footer */}
           <div className="calib-footer">
             <button className="calib-btn primary" onClick={handleCopy}>
-              {copyFeedback ? '✓ COPIED JSON!' : '📋 COPY CONFIG'}
+              {copyFeedback ? '✓ COPIED JSON!' : 'COPY CONFIG'}
             </button>
             <button className="calib-btn secondary" onClick={resetActiveSection}>
               RESET SEC

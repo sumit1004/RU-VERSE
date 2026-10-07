@@ -52,6 +52,10 @@ export default function AdminCoordinators() {
   const [newPassword, setNewPassword] = useState('');
   const [resettingPwd, setResettingPwd] = useState(false);
 
+  // Delete Coordinator Modal
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingCoord, setDeletingCoord] = useState(false);
+
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
@@ -209,6 +213,22 @@ export default function AdminCoordinators() {
     }
   };
 
+  // Delete Coordinator
+  const handleDeleteCoordinator = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeletingCoord(true);
+      await coordinatorService.deleteCoordinator(deleteTarget.id);
+      showToast('success', `Coordinator "${deleteTarget.name}" deleted successfully.`);
+      setDeleteTarget(null);
+      loadCoordinators();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete coordinator.');
+    } finally {
+      setDeletingCoord(false);
+    }
+  };
+
   // Group permissions by module
   const groupedPerms = allPerms.reduce((acc, p) => {
     const mod = p.module || 'General';
@@ -268,7 +288,6 @@ export default function AdminCoordinators() {
       <div className="admin-toolbar">
         <div className="admin-toolbar-left">
           <div className="admin-search-wrapper">
-            <span className="admin-search-icon">🔍</span>
             <input
               type="text"
               className="admin-input admin-search-input"
@@ -319,7 +338,6 @@ export default function AdminCoordinators() {
       ) : coordinators.length === 0 ? (
         <div className="admin-table-container">
           <div className="admin-empty-state">
-            <div className="admin-empty-icon">👥</div>
             <div className="admin-empty-title">No coordinators found</div>
             <div className="admin-empty-desc">
               Create an administrative user with scoped permissions to delegate festival arena operations.
@@ -414,6 +432,16 @@ export default function AdminCoordinators() {
                         >
                           {coord.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                         </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setDeleteTarget(coord)}
+                            className="admin-btn admin-btn-ghost admin-btn-sm"
+                            style={{ color: 'var(--ad-danger-text)' }}
+                            title="Delete Coordinator"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -633,7 +661,6 @@ export default function AdminCoordinators() {
             <form onSubmit={handleSaveEvents}>
               <div className="admin-modal-body">
                 <div className="admin-search-wrapper" style={{ marginBottom: '0.75rem' }}>
-                  <span className="admin-search-icon">🔍</span>
                   <input
                     type="text"
                     className="admin-input admin-search-input"
@@ -666,7 +693,7 @@ export default function AdminCoordinators() {
                             <div>
                               <div style={{ fontSize: '0.8125rem', color: 'var(--ad-text-primary)' }}>{ev.title}</div>
                               <div style={{ fontSize: '0.6875rem', color: 'var(--ad-text-muted)' }}>
-                                {ev.category?.name} • 📍 {ev.venue || 'TBD'}
+                                {ev.category?.name} • {ev.venue || 'TBD'}
                               </div>
                             </div>
                           </label>
@@ -726,6 +753,47 @@ export default function AdminCoordinators() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE COORDINATOR CONFIRMATION MODAL */}
+      {deleteTarget && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3 className="admin-modal-title" style={{ color: 'var(--ad-danger-text)' }}>
+                Delete Coordinator
+              </h3>
+              <button onClick={() => setDeleteTarget(null)} className="admin-modal-close">×</button>
+            </div>
+
+            <div className="admin-modal-body">
+              <p style={{ color: 'var(--ad-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Are you sure you want to permanently delete coordinator <strong>{deleteTarget.name}</strong> ({deleteTarget.email})?
+              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--ad-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                This action will revoke all access permissions, unassign them from events, and permanently remove the account credentials. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="admin-btn admin-btn-secondary admin-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingCoord}
+                onClick={handleDeleteCoordinator}
+                className="admin-btn admin-btn-danger admin-btn-sm"
+              >
+                {deletingCoord ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
