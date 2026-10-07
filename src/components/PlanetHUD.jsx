@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function PlanetHUD({ section, active, progress, onCtaClick }) {
   const isContact = section?.id === 'contact';
-  const exitThreshold = isContact ? 0.42 : 0.74;
+  const exitThreshold = isContact ? 0.45 : 0.74;
 
   // Panel is fully visible when locked in middle
   const isLocked = active && progress >= 0.25 && progress <= exitThreshold;
@@ -15,6 +15,12 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
 
   const handleCtaClick = (e) => {
     e.preventDefault();
+    if (section.id === 'contact') {
+      const email = section.email || 'ruverse@rungta.ac.in';
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent('RUVERSE 2026 Inquiry')}`;
+      window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (onCtaClick) {
       onCtaClick(section);
       return;
@@ -54,8 +60,6 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
       <h2 className="hud-title">{section.title}</h2>
       {section.tagline && <p className="hud-tagline">{section.tagline}</p>}
 
-
-
       {/* Description */}
       <p className="hud-desc">{section.description}</p>
       {section.subnote && <p className="hud-subnote">{section.subnote}</p>}
@@ -64,15 +68,38 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
       {section.id === 'contact' && (
         <div className="hud-contact-box">
           <p className="contact-loc">Rungta International Skills University, Bhilai (C.G.)</p>
-          <p className="contact-channel">TRANSMISSION: <a href={`mailto:${section.email || 'ruverse@rungta.ac.in'}`} className="phone-link">{section.email || 'ruverse@rungta.ac.in'}</a></p>
-          {section.phones ? (
+          <p className="contact-channel">
+            TRANSMISSION:{' '}
+            <a
+              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(section.email || 'ruverse@rungta.ac.in')}&su=${encodeURIComponent('RUVERSE 2026 Inquiry')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="phone-link"
+              onClick={(e) => {
+                e.preventDefault();
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(section.email || 'ruverse@rungta.ac.in')}&su=${encodeURIComponent('RUVERSE 2026 Inquiry')}`;
+                window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              {section.email || 'ruverse@rungta.ac.in'}
+            </a>
+          </p>
+          {section.contacts ? (
+            section.contacts.map((c, idx) => (
+              <p key={idx} className="contact-phone">
+                {c.name}: <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="phone-link">{c.phone}</a>
+              </p>
+            ))
+          ) : section.phones ? (
             section.phones.map((num, idx) => (
               <p key={idx} className="contact-phone">
-                HOTLINE {idx + 1}: <a href={`tel:${num.replace(/\s+/g, '')}`} className="phone-link">{num}</a>
+                <a href={`tel:${num.replace(/\s+/g, '')}`} className="phone-link">{num}</a>
               </p>
             ))
           ) : (
-            <p className="contact-phone">HOTLINE: <a href={`tel:${(section.phone || '+91 9302787061').replace(/\s+/g, '')}`} className="phone-link">{section.phone || '+91 9302787061'}</a></p>
+            <p className="contact-phone">
+              <a href={`tel:${(section.phone || '+91 9302787061').replace(/\s+/g, '')}`} className="phone-link">{section.phone || '+91 9302787061'}</a>
+            </p>
           )}
         </div>
       )}

@@ -10,10 +10,12 @@ import {
 } from '../controllers/form.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/permission.middleware.js';
+import { requireEventAccess } from '../middleware/coordinator-scope.middleware.js';
 import { validateFormField, validateFormReorder } from '../validators/form.validator.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
+router.use(requireEventAccess('eventId', 'event'));
 
 router.get(
   '/',

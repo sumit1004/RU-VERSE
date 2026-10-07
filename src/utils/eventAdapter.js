@@ -1,5 +1,3 @@
-import { EVENTS, EVENT_CATEGORIES } from '../data/eventsData';
-
 /**
  * Maps a backend API event model to the public event UI schema
  * preserving compatibility with all existing cards, modals, and search filters.

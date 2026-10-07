@@ -29,7 +29,10 @@ app.use(
       if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in dev if matched
+      if (env.NODE_ENV !== 'production') {
+        return callback(null, true); // Permissive in dev
+      }
+      return callback(new Error('CORS origin denied.'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -15,6 +15,7 @@ import {
 } from '../controllers/event.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/permission.middleware.js';
+import { requireEventAccess } from '../middleware/coordinator-scope.middleware.js';
 import { validateEvent } from '../validators/event.validator.js';
 
 // Public Router
@@ -48,6 +49,7 @@ adminEventRouter.post(
 adminEventRouter.put(
   '/:id',
   requirePermission('events.edit'),
+  requireEventAccess('id', 'event'),
   validateEvent,
   updateExistingEvent
 );
@@ -55,35 +57,41 @@ adminEventRouter.put(
 adminEventRouter.patch(
   '/:id/publish',
   requirePermission('events.edit'),
+  requireEventAccess('id', 'event'),
   patchEventPublish
 );
 
 adminEventRouter.patch(
   '/:id/status',
   requirePermission('events.edit'),
+  requireEventAccess('id', 'event'),
   patchEventStatus
 );
 
 adminEventRouter.patch(
   '/:id/featured',
   requirePermission('events.edit'),
+  requireEventAccess('id', 'event'),
   patchEventFeatured
 );
 
 adminEventRouter.patch(
   '/:id/open-for-all',
   requirePermission('events.edit'),
+  requireEventAccess('id', 'event'),
   patchEventOpenForAll
 );
 
 adminEventRouter.patch(
   '/:id/archive',
   requirePermission('events.archive'),
+  requireEventAccess('id', 'event'),
   patchEventArchive
 );
 
 adminEventRouter.delete(
   '/:id',
   requirePermission('events.archive'),
+  requireEventAccess('id', 'event'),
   deleteEventHandler
 );

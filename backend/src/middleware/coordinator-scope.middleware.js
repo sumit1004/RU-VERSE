@@ -32,12 +32,11 @@ export const requireEventAccess = (paramName = 'eventId', paramType = 'event') =
 
       // 2. If Coordinator role, check assigned event
       let eventId = null;
-      const isRegistrationRoute =
+      const isRegistrationIdParam =
         paramType === 'registration' ||
-        (req.baseUrl && req.baseUrl.includes('/registrations')) ||
-        (req.originalUrl && req.originalUrl.includes('/registrations'));
+        (req.baseUrl === '/api/admin/registrations' && (paramName === 'id' || req.params.id !== undefined));
 
-      if (isRegistrationRoute) {
+      if (isRegistrationIdParam) {
         const rawId = req.params[paramName] || req.params.id;
         const regId = parseInt(rawId, 10);
         if (!isNaN(regId)) {

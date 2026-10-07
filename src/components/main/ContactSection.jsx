@@ -6,9 +6,8 @@ export default function ContactSection({ active, progress }) {
   const section = universeSections[3];
   const isVisible = active && progress >= 0.12;
 
-  // Final centering transition: smoothly begins at 0.38 and finishes centering by 0.85 -> 1.00
-  const centerRaw = Math.max(0, Math.min(1, (progress - 0.38) / 0.46));
-  // Smooth cubic ease-in-out curve
+  // Smooth centering interpolation for "THE FUTURE IS HERE..." closing transmission
+  const centerRaw = Math.max(0, Math.min(1, (progress - 0.35) / 0.50));
   const centerEase = centerRaw < 0.5
     ? 4 * centerRaw * centerRaw * centerRaw
     : 1 - Math.pow(-2 * centerRaw + 2, 3) / 2;
@@ -27,9 +26,9 @@ export default function ContactSection({ active, progress }) {
         {/* Sector Watermark & Floating Badge (Fade out as section reaches final centered state) */}
         <div
           className="sector-watermark"
-          style={{ opacity: Math.max(0, 0.02 * (1 - centerEase * 1.5)) }}
+          style={{ opacity: Math.max(0, 0.03 * (1 - centerEase * 1.5)) }}
         >
-          05
+          04
         </div>
         <div
           className="sector-floating-badge"

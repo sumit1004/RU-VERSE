@@ -170,10 +170,10 @@ button {
    ========================================================================== */
 .global-hud {
   position: fixed;
-  top: 24px;
-  left: 36px;
-  right: 36px;
-  z-index: 20;
+  top: 20px;
+  left: 32px;
+  right: 32px;
+  z-index: 50;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -188,6 +188,8 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .hud-logo {
@@ -207,14 +209,10 @@ button {
   border: 1px solid rgba(142, 209, 255, 0.2);
 }
 
-.center-coords {
-  color: var(--ink-muted);
-  font-size: 10px;
-}
-
 .quality-badge {
   font-size: 10px;
   color: var(--ink-secondary);
+  pointer-events: auto;
 }
 
 .hud-grid-overlay {
@@ -948,7 +946,7 @@ button {
 }
 
 /* ==========================================================================
-   Sector 05: Contact In-Section Closing Transmission & Minimal Footer
+   Sector 04: Contact In-Section Closing Transmission & Minimal Footer
    ========================================================================== */
 .contact-editorial {
   top: 18vh;
@@ -964,16 +962,18 @@ button {
 }
 
 .section-contact.is-centering .contact-editorial {
-  width: min(920px, 88vw);
+  width: min(940px, 88vw);
 }
 
 .closing-transmission-block {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* GPU-accelerated smooth interpolation toward viewport center */
-  transform: translate(calc(var(--center-progress, 0) * (50vw - 6vw - 50%)),
-      calc(var(--center-progress, 0) * 16vh));
+  /* Smooth GPU-accelerated interpolation toward viewport center */
+  transform: translate(
+    calc(var(--center-progress, 0) * (50vw - 6vw - 50%)),
+    calc(var(--center-progress, 0) * 16vh)
+  );
   transform-origin: center center;
   transition: transform 0.05s linear;
 }
@@ -1119,4 +1119,23 @@ button {
     gap: 8px;
     padding-bottom: 20px;
   }
+}
+
+/* Global Date & Time Picker Indicator (Clean White in Dark Mode) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2);
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  filter: invert(1) brightness(1.6) drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
 }

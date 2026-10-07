@@ -27,11 +27,12 @@ export default function RUVerseSection({ active, progress }) {
         <div className={`sector-editorial-canvas ru-verse-editorial ${isVisible ? 'visible' : ''}`}>
           <div className="editorial-story-flow">
             <p className="editorial-body">
-              And now, introducing RUVERSE — the annual tech and innovation universe of Rungta University. A space where technology, creativity, competition, and collaboration come together to shape the ideas of tomorrow.
+              Born from the 27-year legacy of the Rungta Group, Rungta University is built for a generation that refuses to learn inside a box.
+
             </p>
-            {/* <p className="editorial-galaxy">
-              Over four intense, exciting days, RUVERSE brings together brilliant minds through hackathons, coding challenges, robotics showdowns, design sprints, innovation labs, guest keynotes, and experiences that push boundaries. It’s where students, tech enthusiasts, and industry innovators connect, build, compete, and create the next generation of technology.
-            </p> */}
+            <p className="editorial-galaxy">
+              At RU, technology, skills, creativity and industry come together to shape future-ready professionals and create an ecosystem where ideas are meant to be built.
+            </p>
           </div>
         </div>
       </div>

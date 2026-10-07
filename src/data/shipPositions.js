@@ -39,12 +39,12 @@ export const DEFAULT_SHIP_POSITIONS = {
     "name": "Sector 02: ABOUT US",
     "desktop": {
       "screenX": 0.16,
-      "screenY": 0.05,
+      "screenY": 0.3,
       "targetZ": 4,
       "rotationX": -1.98,
       "rotationY": -2.72,
       "rotationZ": -3.14,
-      "scale": 1.5
+      "scale": 1.3
     },
     "mobile": {
       "screenX": 0.5,

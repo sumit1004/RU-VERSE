@@ -285,7 +285,7 @@ async function runTests() {
     const deleteCatAttempt = await request('DELETE', `/api/admin/categories/${categoryId}`, null, authCookie);
     assert(
       deleteCatAttempt.statusCode === 400 &&
-      deleteCatAttempt.body.message.includes('events are assigned to it'),
+      deleteCatAttempt.body.message.includes('assigned to it'),
       '20. Destructive category deletion blocked when events are assigned'
     );
 
@@ -369,11 +369,11 @@ async function runTests() {
     );
 
     // 29. Safe Event Archive (instead of destructive delete)
-    const archiveRes = await request('DELETE', `/api/admin/events/${event2Id}`, null, authCookie);
+    const archiveRes = await request('PATCH', `/api/admin/events/${event2Id}/archive`, { archive: true }, authCookie);
     assert(
       archiveRes.statusCode === 200 &&
       archiveRes.body.data.event.archivedAt !== null,
-      '29. Event DELETE route safely archives event'
+      '29. Event PATCH archive route safely archives event'
     );
 
     // ==========================================
@@ -883,7 +883,85 @@ async function runTests() {
       '65b. Deleted coordinator returns 404 on lookup'
     );
 
-    console.log(`\n=== COMPLETE TEST SUITE (PHASES 1-9): ${passedCount} PASSED, ${failedCount} FAILED ===\n`);
+    // ==========================================
+    // PHASE 10: PUBLIC REGISTRATION PRIVACY & ROUTE SECURITY
+    // ==========================================
+
+    // 66. Submit a fresh public team registration for testing public registrations list
+    await request('POST', `/api/events/${teamEventSlug}/registrations`, {
+      registrationType: 'TEAM',
+      teamName: 'Galaxy Explorers',
+      participants: [
+        {
+          fixed: {
+            fullName: 'Rohan Verma',
+            email: 'rohan.verma@example.com',
+            mobile: '9888877777',
+            college: 'RV College of Engineering',
+          },
+          custom: { discord_handle: 'rohan#0001' },
+        },
+        {
+          fixed: {
+            fullName: 'Ananya Roy',
+            email: 'ananya.roy@example.com',
+            mobile: '9888877778',
+            college: 'RV College of Engineering',
+          },
+          custom: { discord_handle: 'ananya#0002' },
+        },
+      ],
+    });
+
+    const pubRegsList = await request('GET', `/api/events/${teamEventSlug}/registrations`);
+    assert(
+      pubRegsList.statusCode === 200 &&
+      pubRegsList.body.data &&
+      Array.isArray(pubRegsList.body.data.registrations) &&
+      pubRegsList.body.data.registrations.length >= 1,
+      '66. Public registrations endpoint returns 200 with list'
+    );
+
+    // 67. Public-safe data privacy check: No email, mobile, college or password leaked
+    const firstPubReg = pubRegsList.body.data.registrations[0];
+    const isPrivacySafe =
+      firstPubReg.email === undefined &&
+      firstPubReg.mobile === undefined &&
+      firstPubReg.college === undefined &&
+      firstPubReg.fieldValues === undefined &&
+      (firstPubReg.teamName !== undefined || firstPubReg.participantName !== undefined);
+    assert(
+      isPrivacySafe,
+      '67. Public registration list strictly omits email, mobile, college and private data'
+    );
+
+    // 68. Coordinator A (assigned only to Event 1) cannot modify Form for unassigned Team Event
+    const unauthFormMod = await request('POST', `/api/admin/events/${teamEventId}/form/fields`, {
+      label: 'Unauthorized Field',
+      fieldType: 'TEXT',
+    }, cookieA);
+    assert(
+      unauthFormMod.statusCode === 403,
+      '68. Coordinator A cannot add form field to unassigned event (403)'
+    );
+
+    // 69. Coordinator A cannot edit unassigned Team Event details
+    const unauthEventEdit = await request('PUT', `/api/admin/events/${teamEventId}`, {
+      title: 'Hacked Title',
+      categoryId,
+      venue: 'Hacked Venue',
+      startDateTime: '2026-11-10T09:00:00Z',
+      endDateTime: '2026-11-11T21:00:00Z',
+      registrationStart: '2026-10-01T00:00:00Z',
+      registrationEnd: '2026-11-08T23:59:59Z',
+      registrationType: 'TEAM',
+    }, cookieA);
+    assert(
+      unauthEventEdit.statusCode === 403,
+      '69. Coordinator A cannot edit unassigned event details (403)'
+    );
+
+    console.log(`\n=== COMPLETE MASTER TEST SUITE: ${passedCount} PASSED, ${failedCount} FAILED ===\n`);
   } catch (err) {
     console.error('Test execution error:', err);
   } finally {

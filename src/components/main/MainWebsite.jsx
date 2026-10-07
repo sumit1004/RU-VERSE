@@ -131,11 +131,15 @@ export default function MainWebsite({ quality }) {
       {/* 2. Top Fixed Global HUD Header */}
       <header className="global-hud">
         <div className="hud-cell brand" onClick={() => handleNavigate(-1)}>
-          <img className='logo' src="./models/planets/RUI_LOGO_WHITE.png" alt="" />
+          <img className='logo' src="./models/planets/RUI_LOGO_WHITE.png" alt="RUI Logo" />
         </div>
-        <div className="hud-cell center-coords">
-          <span>ORBITAL FREQUENCY // RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
-        </div>
+
+        {/* Command Navigation Bar (Top Center on Desktop, Anchored Bottom on Mobile) */}
+        <CommandBar
+          active={activeSection}
+          onNavigate={handleNavigate}
+        />
+
         <div className="hud-cell quality-badge">
           <span>SYS TIER: {quality?.tier ? quality.tier.toUpperCase() : 'HIGH'}</span>
         </div>
@@ -191,13 +195,6 @@ export default function MainWebsite({ quality }) {
       <ScrollCue
         text={activeSection === 4 ? 'TRANSMISSION COMPLETE' : 'SCROLL TO NAVIGATE DEEP SPACE'}
         isEnd={activeSection === 4}
-      />
-
-      {/* 5. Fixed Futuristic Command Navigation Bar */}
-      <CommandBar
-        active={activeSection}
-        onNavigate={handleNavigate}
-        mobile={quality?.mobile || false}
       />
     </div>
   );
