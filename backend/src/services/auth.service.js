@@ -1,8 +1,9 @@
 import { prisma } from '../config/database.js';
 import { comparePassword } from '../utils/password.js';
 import { generateToken } from '../utils/jwt.js';
+import { createAuditLog } from './audit.service.js';
 
-export const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ email, password }, req = null) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   const user = await prisma.user.findUnique({
@@ -26,19 +27,41 @@ export const loginUser = async ({ email, password }) => {
   });
 
   if (!user) {
+    await createAuditLog({
+      action: 'LOGIN_FAILED',
+      entityType: 'USER',
+      metadata: { email: normalizedEmail, reason: 'User not found' },
+      req,
+    });
     const error = new Error('Invalid email or password.');
     error.statusCode = 401;
     throw error;
   }
 
   if (user.status !== 'ACTIVE') {
+    await createAuditLog({
+      actorUserId: user.id,
+      action: 'LOGIN_FAILED',
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: { email: normalizedEmail, reason: 'Account deactivated' },
+      req,
+    });
     const error = new Error('Account is deactivated. Please contact the administrator.');
-    error.statusCode = 403;
+    error.statusCode = 401;
     throw error;
   }
 
   const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
+    await createAuditLog({
+      actorUserId: user.id,
+      action: 'LOGIN_FAILED',
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: { email: normalizedEmail, reason: 'Wrong password' },
+      req,
+    });
     const error = new Error('Invalid email or password.');
     error.statusCode = 401;
     throw error;
@@ -69,6 +92,15 @@ export const loginUser = async ({ email, password }) => {
     userId: user.id,
     email: user.email,
     roleId: user.roleId,
+  });
+
+  await createAuditLog({
+    actorUserId: user.id,
+    action: 'LOGIN_SUCCESS',
+    entityType: 'USER',
+    entityId: user.id,
+    metadata: { email: user.email, role: user.role.slug },
+    req,
   });
 
   const userData = {

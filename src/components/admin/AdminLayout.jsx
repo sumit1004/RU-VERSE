@@ -38,47 +38,67 @@ export default function AdminLayout() {
             </div>
           </NavLink>
 
-          <NavLink
-            to="/admin/categories"
-            className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
-          >
-            <div className="admin-nav-item-left">
-              <span>📁</span>
-              <span>Categories</span>
-            </div>
-          </NavLink>
+          {(currentUser?.role?.slug === 'admin' || hasPermission('categories.view')) && (
+            <NavLink
+              to="/admin/categories"
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="admin-nav-item-left">
+                <span>📁</span>
+                <span>Categories</span>
+              </div>
+            </NavLink>
+          )}
 
-          <div className="admin-nav-item disabled" title="Coming soon in next batch">
-            <div className="admin-nav-item-left">
-              <span>🎪</span>
-              <span>Events</span>
-            </div>
-            <span className="admin-badge-soon">Soon</span>
-          </div>
+          {(currentUser?.role?.slug === 'admin' || hasPermission('events.view')) && (
+            <NavLink
+              to="/admin/events"
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="admin-nav-item-left">
+                <span>🎪</span>
+                <span>Events</span>
+              </div>
+            </NavLink>
+          )}
 
-          <div className="admin-nav-item disabled" title="Coming soon in next batch">
-            <div className="admin-nav-item-left">
-              <span>📝</span>
-              <span>Registrations</span>
-            </div>
-            <span className="admin-badge-soon">Soon</span>
-          </div>
+          {(currentUser?.role?.slug === 'admin' || hasPermission('registrations.view')) && (
+            <NavLink
+              to="/admin/registrations"
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="admin-nav-item-left">
+                <span>📝</span>
+                <span>Registrations</span>
+              </div>
+            </NavLink>
+          )}
 
-          <div className="admin-nav-item disabled" title="Coming soon in next batch">
-            <div className="admin-nav-item-left">
-              <span>👥</span>
-              <span>Coordinators</span>
-            </div>
-            <span className="admin-badge-soon">Soon</span>
-          </div>
+          {/* Coordinators Management is Admin Only */}
+          {currentUser?.role?.slug === 'admin' && (
+            <NavLink
+              to="/admin/coordinators"
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="admin-nav-item-left">
+                <span>👥</span>
+                <span>Coordinators</span>
+              </div>
+            </NavLink>
+          )}
 
-          <div className="admin-nav-item disabled" title="Coming soon in next batch">
-            <div className="admin-nav-item-left">
-              <span>⚙️</span>
-              <span>Settings</span>
-            </div>
-            <span className="admin-badge-soon">Soon</span>
-          </div>
+          {/* Audit Logs is Admin or audit.view Only */}
+          {(currentUser?.role?.slug === 'admin' || hasPermission('audit.view')) && (
+            <NavLink
+              to="/admin/audit-logs"
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="admin-nav-item-left">
+                <span>📜</span>
+                <span>Audit Logs</span>
+              </div>
+            </NavLink>
+          )}
         </nav>
 
         <div className="admin-sidebar-footer">

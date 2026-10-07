@@ -18,3 +18,15 @@ export const requirePermission = (permissionSlug) => {
     next();
   };
 };
+
+export const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return sendError(res, 'Authentication required.', 401);
+  }
+
+  if (req.user.role?.slug !== 'admin') {
+    return sendError(res, 'Administrator privileges required for this action.', 403);
+  }
+
+  next();
+};

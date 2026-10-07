@@ -43,6 +43,9 @@ const ALL_PERMISSIONS = [
   { slug: 'coordinators.create', name: 'Create Coordinator', module: 'coordinators', description: 'Can invite and create new coordinators' },
   { slug: 'coordinators.edit', name: 'Edit Coordinator', module: 'coordinators', description: 'Can edit coordinator roles and permissions' },
   { slug: 'coordinators.delete', name: 'Delete Coordinator', module: 'coordinators', description: 'Can deactivate or delete coordinators' },
+  
+  // Audit Logs
+  { slug: 'audit.view', name: 'View Audit Logs', module: 'audit', description: 'Can view system and security audit trails' },
 ];
 
 const COORDINATOR_PERMISSIONS = [
@@ -168,6 +171,36 @@ async function seed() {
     },
   });
   console.log(`[Seed] Initial admin user confirmed: ${adminUser.email} (ID: ${adminUser.id})`);
+
+  // 6. Seed Default Festival Categories (Idempotent upsert)
+  const DEFAULT_CATEGORIES = [
+    { name: 'Technical & Coding', slug: 'technical-and-coding', description: 'Hackathons, algorithmic sprints, and software showcases', displayOrder: 1 },
+    { name: 'Gaming & Esports', slug: 'gaming-and-esports', description: 'Competitive battle arenas, FPS, and console tournaments', displayOrder: 2 },
+    { name: 'Robotics & Hardware', slug: 'robotics-and-hardware', description: 'Combat robotics, drone racing, and IoT innovation', displayOrder: 3 },
+    { name: 'Workshops & Seminars', slug: 'workshops-and-seminars', description: 'Hands-on masterclasses and guest tech keynotes', displayOrder: 4 },
+  ];
+
+  for (const cat of DEFAULT_CATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: {
+        name: cat.name,
+        description: cat.description,
+        displayOrder: cat.displayOrder,
+        isActive: true,
+      },
+      create: {
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        displayOrder: cat.displayOrder,
+        isActive: true,
+        createdById: adminUser.id,
+        updatedById: adminUser.id,
+      },
+    });
+  }
+  console.log(`[Seed] Confirmed ${DEFAULT_CATEGORIES.length} default festival categories.`);
 
   console.log('[Seed] Database seed completed successfully.');
 }

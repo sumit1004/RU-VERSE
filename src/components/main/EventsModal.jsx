@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { EVENTS, EVENT_CATEGORIES } from '../../data/eventsData';
+import { eventService } from '../../services/eventService';
+import { categoryService } from '../../services/categoryService';
+import { adaptApiEvents, adaptApiCategories } from '../../utils/eventAdapter';
 import EventSearch from './EventSearch';
 import EventFilters from './EventFilters';
 import EventCard from './EventCard';
@@ -11,13 +14,15 @@ import './EventsModal.css';
  * - Pure data-driven event database manifest for RUVERSE 2026.
  * - Interactive technical search bar with live letter-by-letter filtering & top 5 suggestions.
  * - Category filtering working seamlessly alongside search.
- * - Deterministic filtering calculated from canonical EVENTS dataset on every change.
+ * - Deterministic filtering calculated from canonical dataset with backend API & fallback.
  */
 export default function EventsModal({ isOpen, onClose }) {
   const closeBtnRef = useRef(null);
   const modalRef = useRef(null);
   const scrollAreaRef = useRef(null);
 
+  const [eventsList, setEventsList] = useState(EVENTS);
+  const [categoriesList, setCategoriesList] = useState(EVENT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(() => {
@@ -26,6 +31,34 @@ export default function EventsModal({ isOpen, onClose }) {
     }
     return false;
   });
+
+  // Fetch live published events & categories from backend with graceful fallback
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveEvents() {
+      try {
+        const [apiEvents, apiCats] = await Promise.all([
+          eventService.getPublicEvents().catch(() => null),
+          categoryService.getPublicCategories().catch(() => null),
+        ]);
+
+        if (isMounted) {
+          if (Array.isArray(apiEvents) && apiEvents.length > 0) {
+            setEventsList(adaptApiEvents(apiEvents));
+          }
+          if (Array.isArray(apiCats) && apiCats.length > 0) {
+            setCategoriesList(adaptApiCategories(apiCats));
+          }
+        }
+      } catch {
+        // Fallback to static data on any error
+      }
+    }
+    fetchLiveEvents();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Track responsive viewport width
   useEffect(() => {
@@ -39,18 +72,18 @@ export default function EventsModal({ isOpen, onClose }) {
   // Fast category ID -> Label lookup
   const categoryLabelMap = useMemo(() => {
     const map = {};
-    EVENT_CATEGORIES.forEach((cat) => {
+    categoriesList.forEach((cat) => {
       map[cat.id] = cat.label;
     });
     return map;
-  }, []);
+  }, [categoriesList]);
 
-  // Pure deterministic calculation: Category filter + Search query filter from canonical EVENTS
+  // Pure deterministic calculation: Category filter + Search query filter from dataset
   const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const queryTerms = q ? q.split(/\s+/).filter(Boolean) : [];
 
-    return EVENTS.filter((event) => {
+    return eventsList.filter((event) => {
       // 1. Matches Category
       const categories = Array.isArray(event.categories)
         ? event.categories
@@ -80,7 +113,7 @@ export default function EventsModal({ isOpen, onClose }) {
 
       return queryTerms.every((term) => searchableText.includes(term));
     });
-  }, [selectedCategory, searchQuery]);
+  }, [eventsList, selectedCategory, searchQuery]);
 
   // Reset category and search query on modal open
   useEffect(() => {
@@ -257,7 +290,7 @@ export default function EventsModal({ isOpen, onClose }) {
           <span className="modal-footer-status">
             {searchQuery.trim()
               ? `${filteredEvents.length} EVENT${filteredEvents.length === 1 ? '' : 'S'} FOUND`
-              : `DISPLAYING ${filteredEvents.length} OF ${EVENTS.length} ARENAS`}
+              : `DISPLAYING ${filteredEvents.length} OF ${eventsList.length} ARENAS`}
           </span>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { env } from '../config/env.js';
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { token, user } = await loginUser({ email, password });
+    const { token, user } = await loginUser({ email, password }, req);
 
     // Set secure HTTP-only cookie
     const cookieOptions = getAuthCookieOptions();

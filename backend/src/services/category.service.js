@@ -236,11 +236,22 @@ export const deleteCategory = async (id) => {
 
   const existing = await prisma.category.findUnique({
     where: { id: categoryId },
+    include: {
+      _count: {
+        select: { events: true },
+      },
+    },
   });
 
   if (!existing) {
     const error = new Error('Category not found.');
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (existing._count?.events > 0) {
+    const error = new Error('Category cannot be deleted because events are assigned to it. Please deactivate the category instead.');
+    error.statusCode = 400;
     throw error;
   }
 

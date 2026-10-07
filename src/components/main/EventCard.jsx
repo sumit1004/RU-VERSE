@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { formatEventDates } from '../../data/eventsData';
 
 /**
@@ -11,7 +12,9 @@ import { formatEventDates } from '../../data/eventsData';
  */
 export default function EventCard({ event, categoryLabelMap = {} }) {
   const [imageError, setImageError] = useState(false);
-  const hasUrl = Boolean(event.registrationUrl && event.registrationUrl.trim() !== '');
+  const regUrl = event.registrationUrl || (event.slug ? `/events/${event.slug}/register` : null);
+  const hasUrl = Boolean(regUrl && String(regUrl).trim() !== '');
+  const isExternal = hasUrl && (String(regUrl).startsWith('http://') || String(regUrl).startsWith('https://'));
   const formattedDate = formatEventDates(event.dates);
 
   // Normalize categories array
@@ -71,16 +74,27 @@ export default function EventCard({ event, categoryLabelMap = {} }) {
       {/* Card Footer / Action Button */}
       <div className="event-card-footer">
         {hasUrl ? (
-          <a
-            href={event.registrationUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="event-card-btn"
-            aria-label={`Register for ${event.title}`}
-          >
-            <span>REGISTER</span>
-            <span className="card-btn-arrow" aria-hidden="true">→</span>
-          </a>
+          isExternal ? (
+            <a
+              href={regUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="event-card-btn"
+              aria-label={`Register for ${event.title}`}
+            >
+              <span>REGISTER</span>
+              <span className="card-btn-arrow" aria-hidden="true">→</span>
+            </a>
+          ) : (
+            <Link
+              to={regUrl}
+              className="event-card-btn"
+              aria-label={`Register for ${event.title}`}
+            >
+              <span>REGISTER</span>
+              <span className="card-btn-arrow" aria-hidden="true">→</span>
+            </Link>
+          )
         ) : (
           <button
             type="button"

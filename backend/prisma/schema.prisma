@@ -22,6 +22,12 @@ model User {
   userPermissions   UserPermission[]
   createdCategories Category[]       @relation("CategoryCreatedBy")
   updatedCategories Category[]       @relation("CategoryUpdatedBy")
+  createdEvents     Event[]          @relation("EventCreatedBy")
+  updatedEvents     Event[]          @relation("EventUpdatedBy")
+  createdForms      RegistrationForm[] @relation("FormCreatedBy")
+  updatedForms      RegistrationForm[] @relation("FormUpdatedBy")
+  coordinatorEvents EventCoordinator[]
+  auditLogs         AuditLog[]         @relation("AuditLogs")
 
   @@index([email])
   @@index([roleId])
@@ -102,9 +108,281 @@ model Category {
 
   creator      User?     @relation("CategoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updater      User?     @relation("CategoryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  events       Event[]
 
   @@index([slug])
   @@index([isActive])
   @@index([displayOrder])
   @@map("categories")
 }
+
+enum RegistrationMode {
+  INTERNAL
+  EXTERNAL
+}
+
+enum RegistrationType {
+  INDIVIDUAL
+  TEAM
+  BOTH
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+  WAITLISTED
+}
+
+model Event {
+  id                Int              @id @default(autoincrement())
+  title             String           @db.VarChar(191)
+  slug              String           @unique @db.VarChar(191)
+  shortDescription  String?          @db.VarChar(255)
+  description       String           @db.Text
+  categoryId        Int
+  venue             String           @db.VarChar(191)
+
+  startDateTime     DateTime
+  endDateTime       DateTime
+
+  registrationStart DateTime
+  registrationEnd   DateTime
+
+  registrationMode  RegistrationMode @default(INTERNAL)
+  registrationLink  String?          @db.VarChar(500)
+  registrationType  RegistrationType @default(INDIVIDUAL)
+
+  teamMinSize       Int?
+  teamMaxSize       Int?
+
+  isFeatured        Boolean          @default(false)
+  isOpenForAll      Boolean          @default(true)
+  isActive          Boolean          @default(true)
+  isPublished       Boolean          @default(false)
+
+  displayOrder      Int              @default(0)
+  registrationLimit Int?
+
+  createdById       Int?
+  updatedById       Int?
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  archivedAt        DateTime?
+
+  category          Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  creator           User?            @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updater           User?            @relation("EventUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  registrationForm  RegistrationForm?
+  registrations     Registration[]
+  coordinators      EventCoordinator[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isPublished, isActive, archivedAt])
+  @@index([isFeatured])
+  @@index([startDateTime])
+  @@index([displayOrder])
+  @@map("events")
+}
+
+model EventCoordinator {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_coordinators")
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  PHONE
+  NUMBER
+  DATE
+  SELECT
+  RADIO
+  CHECKBOX
+}
+
+enum FieldScope {
+  REGISTRATION
+  PARTICIPANT
+}
+
+model RegistrationForm {
+  id           Int                     @id @default(autoincrement())
+  eventId      Int                     @unique
+  title        String                  @db.VarChar(191)
+  description  String?                 @db.Text
+  status       FormStatus              @default(DRAFT)
+  version      Int                     @default(1)
+
+  createdById  Int?
+  updatedById  Int?
+
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  publishedAt  DateTime?
+
+  event        Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  creator      User?                   @relation("FormCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updater      User?                   @relation("FormUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  fields       RegistrationFormField[]
+  registrations Registration[]
+
+  @@index([eventId])
+  @@index([status])
+  @@map("registration_forms")
+}
+
+model RegistrationFormField {
+  id             Int               @id @default(autoincrement())
+  formId         Int
+  label          String            @db.VarChar(191)
+  fieldKey       String            @db.VarChar(100)
+  fieldType      FieldType         @default(TEXT)
+  description    String?           @db.VarChar(255)
+  placeholder    String?           @db.VarChar(191)
+  isRequired     Boolean           @default(false)
+  fieldScope     FieldScope        @default(PARTICIPANT)
+  displayOrder   Int               @default(0)
+  optionsJson    Json?
+  validationJson Json?
+  isFixed        Boolean           @default(false)
+  isActive       Boolean           @default(true)
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  form           RegistrationForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  registrationFieldValues RegistrationFieldValue[]
+  participantFieldValues  ParticipantFieldValue[]
+
+  @@unique([formId, fieldKey])
+  @@index([formId])
+  @@index([displayOrder])
+  @@map("registration_form_fields")
+}
+
+model Registration {
+  id                 Int                @id @default(autoincrement())
+  registrationNumber String             @unique @db.VarChar(50)
+  eventId            Int
+  formId             Int
+  formVersion        Int                @default(1)
+  registrationType   RegistrationType   @default(INDIVIDUAL)
+  teamName           String?            @db.VarChar(191)
+  status             RegistrationStatus @default(CONFIRMED)
+
+  submittedAt        DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+
+  event              Event              @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  form               RegistrationForm   @relation(fields: [formId], references: [id], onDelete: Restrict)
+  participants       Participant[]
+  fieldValues        RegistrationFieldValue[]
+
+  @@index([eventId])
+  @@index([registrationNumber])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([registrationType])
+  @@index([eventId, status])
+  @@map("registrations")
+}
+
+model Participant {
+  id                 Int                     @id @default(autoincrement())
+  registrationId     Int
+  fullName           String                  @db.VarChar(191)
+  email              String                  @db.VarChar(191)
+  mobile             String                  @db.VarChar(50)
+  college            String                  @db.VarChar(191)
+  participantOrder   Int                     @default(1)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  registration       Registration            @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  fieldValues        ParticipantFieldValue[]
+
+  @@index([registrationId])
+  @@index([email])
+  @@index([fullName])
+  @@map("participants")
+}
+
+model RegistrationFieldValue {
+  id             Int                    @id @default(autoincrement())
+  registrationId Int
+  fieldId        Int?
+  fieldKey       String                 @db.VarChar(100)
+  fieldLabel     String                 @db.VarChar(191)
+  value          String                 @db.Text
+  createdAt      DateTime               @default(now())
+
+  registration   Registration           @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  field          RegistrationFormField? @relation(fields: [fieldId], references: [id], onDelete: SetNull)
+
+  @@index([registrationId])
+  @@index([fieldKey])
+  @@map("registration_field_values")
+}
+
+model ParticipantFieldValue {
+  id            Int                    @id @default(autoincrement())
+  participantId Int
+  fieldId       Int?
+  fieldKey      String                 @db.VarChar(100)
+  fieldLabel    String                 @db.VarChar(191)
+  value         String                 @db.Text
+  createdAt     DateTime               @default(now())
+
+  participant   Participant            @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  field         RegistrationFormField? @relation(fields: [fieldId], references: [id], onDelete: SetNull)
+
+  @@index([participantId])
+  @@index([fieldKey])
+  @@map("participant_field_values")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int?
+  action       String   @db.VarChar(100)
+  entityType   String?  @db.VarChar(50)
+  entityId     String?  @db.VarChar(100)
+  eventId      Int?
+  metadataJson Json?
+  ipAddress    String?  @db.VarChar(100)
+  userAgent    String?  @db.VarChar(255)
+  createdAt    DateTime @default(now())
+
+  actor        User?    @relation("AuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([entityType])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+

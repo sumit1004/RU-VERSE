@@ -30,5 +30,13 @@ export const errorHandler = (err, req, res, next) => { // eslint-disable-line no
     ? 'Internal server error occurred.'
     : err.message || 'Internal server error occurred.';
 
-  return sendError(res, message, statusCode, err.errors || null);
+  const errors = err.errors || {};
+  if (err.field) {
+    errors[err.field] = err.message;
+  }
+  if (err.code) {
+    errors.code = err.code;
+  }
+
+  return sendError(res, message, statusCode, Object.keys(errors).length > 0 ? errors : null);
 };

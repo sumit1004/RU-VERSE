@@ -1,13 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PlanetHUD from '../PlanetHUD';
 import EventsModal from './EventsModal';
 import { universeSections } from '../../data/universeData';
 import { eventsData } from '../../data/eventsData';
+import { eventService } from '../../services/eventService';
+import { adaptApiEvents } from '../../utils/eventAdapter';
 
 export default function EventsSection({ active, progress }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [manifestEvents, setManifestEvents] = useState(eventsData);
   const section = universeSections[2];
   const isVisible = active && progress >= 0.15;
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadEvents() {
+      try {
+        const live = await eventService.getPublicEvents().catch(() => null);
+        if (isMounted && Array.isArray(live) && live.length > 0) {
+          setManifestEvents(adaptApiEvents(live));
+        }
+      } catch {
+        // Safe fallback to eventsData
+      }
+    }
+    loadEvents();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section
@@ -38,7 +59,7 @@ export default function EventsSection({ active, progress }) {
 
           <div className="events-manifest-grid">
             <div className="manifest-col">
-              {eventsData.slice(0, 4).map((event) => (
+              {manifestEvents.slice(0, 4).map((event) => (
                 <div key={event.id} className="manifest-item">
                   <span className="manifest-num">{event.number}</span>
                   <div className="manifest-text">
@@ -50,7 +71,7 @@ export default function EventsSection({ active, progress }) {
             </div>
 
             <div className="manifest-col">
-              {eventsData.slice(4, 8).map((event) => (
+              {manifestEvents.slice(4, 8).map((event) => (
                 <div key={event.id} className="manifest-item">
                   <span className="manifest-num">{event.number}</span>
                   <div className="manifest-text">
