@@ -10,15 +10,29 @@ import {
 } from './registration.routes.js';
 import coordinatorRouter from './coordinator.routes.js';
 import auditRouter from './audit.routes.js';
+import prisma from '../config/database.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
 
-// Health Check Endpoint
-router.get('/health', (req, res) => {
-  return sendSuccess(res, 'RUVERSE API is running', {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
+// Enhanced Health Check Endpoint (Verifies Express & DB connectivity safely)
+router.get('/health', async (req, res) => {
+  let dbStatus = 'healthy';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    dbStatus = 'disconnected';
+  }
+
+  const isHealthy = dbStatus === 'healthy';
+  return res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    message: isHealthy ? 'RUVERSE API and Database are operational' : 'API operational, database connection degraded',
+    data: {
+      status: isHealthy ? 'healthy' : 'degraded',
+      database: dbStatus,
+      timestamp: new Date().toISOString(),
+    },
   });
 });
 

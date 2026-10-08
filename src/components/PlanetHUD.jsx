@@ -101,6 +101,46 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
               <a href={`tel:${(section.phone || '+91 9302787061').replace(/\s+/g, '')}`} className="phone-link">{section.phone || '+91 9302787061'}</a>
             </p>
           )}
+
+          {/* Social / External College Links */}
+          <div className="hud-social-box">
+            <div className="hud-social-divider" />
+            <div className="hud-social-links">
+              <a
+                href={section.instagramUrl || 'https://instagram.com/ruverse.rungta'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hud-social-item"
+                aria-label="Follow RUVERSE on Instagram"
+                title="Follow RUVERSE on Instagram"
+              >
+                <svg className="hud-social-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                <span>Instagram</span>
+              </a>
+
+              <span className="hud-social-sep">•</span>
+
+              <a
+                href={section.collegeUrl || 'https://rungta.ac.in'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hud-social-item"
+                aria-label="Visit Rungta University Website"
+                title="Visit Rungta University Website"
+              >
+                <svg className="hud-social-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span>College Website</span>
+              </a>
+            </div>
+          </div>
         </div>
       )}
 

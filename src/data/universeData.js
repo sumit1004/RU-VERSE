@@ -56,11 +56,13 @@ export const universeSections = [
     targetAnchor: '#section-contact',
     coordinates: '21.19° N / 89.51° E',
     email: 'ruverse@rungta.ac.in',
+    instagramUrl: 'https://instagram.com/ruverse.rungta',
+    collegeUrl: 'https://rungta.ac.in',
     contacts: [
-      { name: 'Shraddha ', phone: '+91 9302787061' },
-      { name: 'Piyush', phone: '+91 9708764172' },
-      { name: 'ARSH', phone: '+91 8269766043' },
-      { name: 'Chhavi', phone: '+91 9827471852' }
+      { name: 'Shraddha Tiwari', phone: '+91 9302787061' },
+      { name: 'Piyush Kumar', phone: '+91 9708764172' },
+      { name: 'ARSH Chakraborty', phone: '+91 8269766043' },
+      { name: 'Chhavi Sonkusre', phone: '+91 9827471852' }
     ]
   }
 ];

@@ -45,7 +45,7 @@ export default function ContactSection({ active, progress }) {
           progress={progress}
         />
 
-        {/* In-Section Closing Transmission & Minimal Footer in Empty Space */}
+        {/* In-Section Closing Transmission */}
         <div className={`sector-editorial-canvas contact-editorial ${isVisible ? 'visible' : ''}`}>
           <div className="closing-transmission-block">
             <div
@@ -66,17 +66,17 @@ export default function ContactSection({ active, progress }) {
               <span className="closing-univ">RUNGTA INTERNATIONAL SKILLS UNIVERSITY</span>
             </div>
           </div>
-
-          {/* Minimal in-section footer */}
-          <div className="in-section-footer">
-            <div className="footer-left">
-              <span>© 2026 RUVERSE. All rights reserved.</span>
-            </div>
-            <div className="footer-right">
-              <span>Rungta International Skills University, Bhilai (C.G.)</span>
-            </div>
-          </div>
         </div>
+
+        {/* Minimal in-section footer */}
+        <footer className={`in-section-footer ${isVisible ? 'visible' : ''}`}>
+          <div className="footer-left">
+            <span>© 2026 RUVERSE. All rights reserved.</span>
+          </div>
+          <div className="footer-right">
+            <span>Rungta International Skills University, Bhilai (C.G.)</span>
+          </div>
+        </footer>
       </div>
     </section>
   );
