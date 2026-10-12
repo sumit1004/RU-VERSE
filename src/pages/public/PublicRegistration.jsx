@@ -280,8 +280,8 @@ export default function PublicRegistration() {
     const title = isNotFound
       ? 'Event Not Found'
       : isUnavailable
-      ? 'Registration Unavailable'
-      : 'Unable to Load Registration';
+        ? 'Registration Unavailable'
+        : 'Unable to Load Registration';
 
     return (
       <div className="public-reg-page">
@@ -366,7 +366,7 @@ export default function PublicRegistration() {
                 <line x1="8" y1="2" x2="8" y2="6"></line>
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
-              <span>{event.startDateTime ? new Date(event.startDateTime).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }) : 'FEB 2026'}</span>
+              {/* <span>{event.startDateTime ? new Date(event.startDateTime).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }) : 'FEB 2026'}</span> */}
             </div>
 
             <div className="reg-meta-chip">
@@ -412,12 +412,12 @@ export default function PublicRegistration() {
               {availability?.status === 'UPCOMING'
                 ? 'Registration Not Started Yet'
                 : availability?.status === 'FULL'
-                ? 'Event Capacity Full'
-                : availability?.status === 'FORM_NOT_PUBLISHED'
-                ? 'Registration Form Not Published'
-                : availability?.status === 'FORM_UNAVAILABLE'
-                ? 'Registration Form Unavailable'
-                : 'Registration Closed'}
+                  ? 'Event Capacity Full'
+                  : availability?.status === 'FORM_NOT_PUBLISHED'
+                    ? 'Registration Form Not Published'
+                    : availability?.status === 'FORM_UNAVAILABLE'
+                      ? 'Registration Form Unavailable'
+                      : 'Registration Closed'}
             </h2>
             <p style={{ color: '#94a3b8', maxWidth: '480px', margin: '0 auto 1.75rem', lineHeight: 1.6, fontSize: '0.9375rem' }}>
               {availability?.message || 'Registration is currently closed for this event.'}
@@ -428,183 +428,183 @@ export default function PublicRegistration() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
-          {/* Registration Type Selection (Only when event supports BOTH) */}
-          {event.registrationType === 'BOTH' && (
-            <div className="reg-section-card">
-              <h3 className="reg-section-title">Select Registration Mode</h3>
-              <p className="reg-section-desc">Choose whether you are participating as an individual or with a team.</p>
+            {/* Registration Type Selection (Only when event supports BOTH) */}
+            {event.registrationType === 'BOTH' && (
+              <div className="reg-section-card">
+                <h3 className="reg-section-title">Select Registration Mode</h3>
+                <p className="reg-section-desc">Choose whether you are participating as an individual or with a team.</p>
 
-              <div className="reg-type-selector">
-                <div
-                  className={`reg-type-option ${regType === 'INDIVIDUAL' ? 'is-selected' : ''}`}
-                  onClick={() => handleRegTypeChange('INDIVIDUAL')}
-                >
-                  <div className="reg-type-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
+                <div className="reg-type-selector">
+                  <div
+                    className={`reg-type-option ${regType === 'INDIVIDUAL' ? 'is-selected' : ''}`}
+                    onClick={() => handleRegTypeChange('INDIVIDUAL')}
+                  >
+                    <div className="reg-type-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </div>
+                    <span className="reg-type-title">Individual</span>
+                    <span className="reg-type-hint">Single participant registration</span>
                   </div>
-                  <span className="reg-type-title">Individual</span>
-                  <span className="reg-type-hint">Single participant registration</span>
-                </div>
 
-                <div
-                  className={`reg-type-option ${regType === 'TEAM' ? 'is-selected' : ''}`}
-                  onClick={() => handleRegTypeChange('TEAM')}
-                >
-                  <div className="reg-type-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="9" cy="7" r="4"></circle>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
+                  <div
+                    className={`reg-type-option ${regType === 'TEAM' ? 'is-selected' : ''}`}
+                    onClick={() => handleRegTypeChange('TEAM')}
+                  >
+                    <div className="reg-type-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                    </div>
+                    <span className="reg-type-title">Team Entry</span>
+                    <span className="reg-type-hint">{minTeam} to {maxTeam} members</span>
                   </div>
-                  <span className="reg-type-title">Team Entry</span>
-                  <span className="reg-type-hint">{minTeam} to {maxTeam} members</span>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Team Information (If Team) */}
-          {regType === 'TEAM' && (
-            <div className="reg-section-card">
-              <h3 className="reg-section-title">Team Information</h3>
-              <p className="reg-section-desc">Provide a distinctive identity for your squad in the fest rankings.</p>
+            {/* Team Information (If Team) */}
+            {regType === 'TEAM' && (
+              <div className="reg-section-card">
+                <h3 className="reg-section-title">Team Information</h3>
+                <p className="reg-section-desc">Provide a distinctive identity for your squad in the fest rankings.</p>
 
-              <div className="reg-field-container">
-                <label htmlFor="teamName" className="reg-field-label">
-                  Team / Clan Name <span className="reg-required-star">*</span>
-                </label>
-                <input
-                  id="teamName"
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => {
-                    setTeamName(e.target.value);
-                    if (errors.teamName) {
-                      setErrors((prev) => {
-                        const next = { ...prev };
-                        delete next.teamName;
-                        return next;
-                      });
-                    }
-                  }}
-                  placeholder="e.g. Quantum Vanguard"
-                  disabled={!availability.isOpen || submitting}
-                  className={`reg-form-input ${errors.teamName ? 'is-invalid' : ''}`}
-                />
-                {errors.teamName && (
-                  <p className="reg-field-error" role="alert">
-                    {errors.teamName}
-                  </p>
-                )}
+                <div className="reg-field-container">
+                  <label htmlFor="teamName" className="reg-field-label">
+                    Team / Clan Name <span className="reg-required-star">*</span>
+                  </label>
+                  <input
+                    id="teamName"
+                    type="text"
+                    value={teamName}
+                    onChange={(e) => {
+                      setTeamName(e.target.value);
+                      if (errors.teamName) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.teamName;
+                          return next;
+                        });
+                      }
+                    }}
+                    placeholder="e.g. Quantum Vanguard"
+                    disabled={!availability.isOpen || submitting}
+                    className={`reg-form-input ${errors.teamName ? 'is-invalid' : ''}`}
+                  />
+                  {errors.teamName && (
+                    <p className="reg-field-error" role="alert">
+                      {errors.teamName}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Registration Level Custom Fields */}
-          {registrationLevelFields.length > 0 && (
+            {/* Registration Level Custom Fields */}
+            {registrationLevelFields.length > 0 && (
+              <div className="reg-section-card">
+                <h3 className="reg-section-title">Registration Details</h3>
+                <p className="reg-section-desc">Additional event-specific questionnaires.</p>
+
+                {registrationLevelFields.map((field) => (
+                  <DynamicField
+                    key={field.id || field.fieldKey}
+                    field={field}
+                    value={registrationFields[field.fieldKey]}
+                    onChange={handleRegistrationFieldChange}
+                    error={errors[`registrationFields.${field.fieldKey}`]}
+                    disabled={!availability.isOpen || submitting}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Participant Information Section */}
             <div className="reg-section-card">
-              <h3 className="reg-section-title">Registration Details</h3>
-              <p className="reg-section-desc">Additional event-specific questionnaires.</p>
+              <h3 className="reg-section-title">
+                {regType === 'TEAM' ? 'Team Members' : 'Participant Information'}
+              </h3>
+              <p className="reg-section-desc">
+                {regType === 'TEAM'
+                  ? `Enter details for all team members (${minTeam} to ${maxTeam} allowed).`
+                  : 'Enter your participant details for event credentials and certificate generation.'}
+              </p>
 
-              {registrationLevelFields.map((field) => (
-                <DynamicField
-                  key={field.id || field.fieldKey}
-                  field={field}
-                  value={registrationFields[field.fieldKey]}
-                  onChange={handleRegistrationFieldChange}
-                  error={errors[`registrationFields.${field.fieldKey}`]}
+              {participants.map((participant, idx) => (
+                <ParticipantForm
+                  key={idx}
+                  index={idx}
+                  participant={participant}
+                  customFields={participantCustomFields}
+                  errors={errors}
+                  onChange={handleParticipantChange}
+                  onRemove={handleRemoveParticipant}
+                  canRemove={regType === 'TEAM' && participants.length > minTeam}
+                  isTeam={regType === 'TEAM'}
                   disabled={!availability.isOpen || submitting}
                 />
               ))}
-            </div>
-          )}
 
-          {/* Participant Information Section */}
-          <div className="reg-section-card">
-            <h3 className="reg-section-title">
-              {regType === 'TEAM' ? 'Team Members' : 'Participant Information'}
-            </h3>
-            <p className="reg-section-desc">
-              {regType === 'TEAM'
-                ? `Enter details for all team members (${minTeam} to ${maxTeam} allowed).`
-                : 'Enter your participant details for event credentials and certificate generation.'}
-            </p>
+              {/* Team Add Member Controls */}
+              {regType === 'TEAM' && (
+                <div className="team-controls-bar">
+                  <div className="team-capacity-info">
+                    Members registered: <strong>{participants.length}</strong> / {maxTeam}
+                    {participants.length < minTeam && (
+                      <span style={{ color: '#f43f5e', marginLeft: '8px' }}>
+                        (Minimum {minTeam} required)
+                      </span>
+                    )}
+                  </div>
 
-            {participants.map((participant, idx) => (
-              <ParticipantForm
-                key={idx}
-                index={idx}
-                participant={participant}
-                customFields={participantCustomFields}
-                errors={errors}
-                onChange={handleParticipantChange}
-                onRemove={handleRemoveParticipant}
-                canRemove={regType === 'TEAM' && participants.length > minTeam}
-                isTeam={regType === 'TEAM'}
-                disabled={!availability.isOpen || submitting}
-              />
-            ))}
-
-            {/* Team Add Member Controls */}
-            {regType === 'TEAM' && (
-              <div className="team-controls-bar">
-                <div className="team-capacity-info">
-                  Members registered: <strong>{participants.length}</strong> / {maxTeam}
-                  {participants.length < minTeam && (
-                    <span style={{ color: '#f43f5e', marginLeft: '8px' }}>
-                      (Minimum {minTeam} required)
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleAddParticipant}
+                    disabled={!availability.isOpen || submitting || participants.length >= maxTeam}
+                    className="btn-add-participant"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Team Member</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleAddParticipant}
-                  disabled={!availability.isOpen || submitting || participants.length >= maxTeam}
-                  className="btn-add-participant"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <span>Add Team Member</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Submission Button */}
-          <div className="reg-submit-area">
-            <button
-              type="submit"
-              disabled={!availability.isOpen || submitting}
-              className="btn-submit-registration"
-            >
-              {submitting ? (
-                <>
-                  <div className="loading-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }}></div>
-                  <span>Submitting Registration...</span>
-                </>
-              ) : (
-                <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  <span>Submit Registration</span>
-                </>
               )}
-            </button>
+            </div>
 
-            <p className="reg-terms-notice">
-              By submitting, you agree to abide by RUVERSE 2026 event rules and code of conduct.
-            </p>
-          </div>
-        </form>
+            {/* Submission Button */}
+            <div className="reg-submit-area">
+              <button
+                type="submit"
+                disabled={!availability.isOpen || submitting}
+                className="btn-submit-registration"
+              >
+                {submitting ? (
+                  <>
+                    <div className="loading-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }}></div>
+                    <span>Submitting Registration...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Submit Registration</span>
+                  </>
+                )}
+              </button>
+
+              <p className="reg-terms-notice">
+                By submitting, you agree to abide by RUVERSE 2026 event rules and code of conduct.
+              </p>
+            </div>
+          </form>
         )}
       </div>
     </div>

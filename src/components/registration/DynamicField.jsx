@@ -57,7 +57,7 @@ export default function DynamicField({ field, value, onChange, error, disabled =
             type="email"
             value={value !== undefined && value !== null ? value : ''}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder={placeholder || 'example@domain.com'}
+            placeholder={placeholder || 'sumitkumar042006@gmail.com'}
             disabled={disabled}
             className={`reg-form-input ${error ? 'is-invalid' : ''}`}
           />
@@ -70,7 +70,7 @@ export default function DynamicField({ field, value, onChange, error, disabled =
             type="tel"
             value={value !== undefined && value !== null ? value : ''}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder={placeholder || '10-digit mobile number'}
+            placeholder={placeholder || '9876543210'}
             disabled={disabled}
             className={`reg-form-input ${error ? 'is-invalid' : ''}`}
           />
@@ -144,18 +144,36 @@ export default function DynamicField({ field, value, onChange, error, disabled =
         );
 
       case 'TEXT':
-      default:
+      default: {
+        const getTextPlaceholder = () => {
+          if (placeholder) return placeholder;
+          const l = (label || '').toLowerCase();
+          const k = (fieldKey || '').toLowerCase();
+          if (l.includes('name') || k.includes('name')) return 'Sumit Kumar';
+          if (l.includes('college') || l.includes('university') || l.includes('institution') || k.includes('college') || k.includes('university')) {
+            return 'Rungta International Skills University';
+          }
+          if (l.includes('phone') || l.includes('mobile') || k.includes('phone') || k.includes('mobile')) {
+            return '9876543210';
+          }
+          if (l.includes('email') || k.includes('email')) {
+            return 'sumitkumar042006@gmail.com';
+          }
+          return `Enter ${label.toLowerCase()}...`;
+        };
+
         return (
           <input
             id={inputId}
             type="text"
             value={value !== undefined && value !== null ? value : ''}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder={placeholder || `Enter ${label.toLowerCase()}...`}
+            placeholder={getTextPlaceholder()}
             disabled={disabled}
             className={`reg-form-input ${error ? 'is-invalid' : ''}`}
           />
         );
+      }
     }
   };
 

@@ -120,8 +120,8 @@ export default function PublicEventDetail() {
     event.registrationType === 'TEAM'
       ? `Team · ${event.teamMinSize || 2}–${event.teamMaxSize || 4} Members`
       : event.registrationType === 'BOTH'
-      ? `Individual / Team (${event.teamMinSize || 2}–${event.teamMaxSize || 4})`
-      : 'Individual Entry';
+        ? `Individual / Team (${event.teamMinSize || 2}–${event.teamMaxSize || 4})`
+        : 'Individual Entry';
 
   const supportsViewRegistrations = Boolean(event.slug && event.registrationMode !== 'EXTERNAL');
 
@@ -166,7 +166,7 @@ export default function PublicEventDetail() {
 
             <div className="event-spec-item">
               <span className="event-spec-label">Date</span>
-              <span className="event-spec-value">{formattedDates || 'FEB 2026'}</span>
+              {/* <span className="event-spec-value">{formattedDates || 'FEB'}</span> */}
             </div>
 
             {formattedTimes && (

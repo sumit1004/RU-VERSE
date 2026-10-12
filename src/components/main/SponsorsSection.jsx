@@ -54,7 +54,6 @@ export default function SponsorsSection({ active, progress }) {
       className={`universe-pinned-section section-sponsors ${active ? 'is-active-section' : ''}`}
     >
       <div className="pinned-content-stage sponsors-content-stage">
-        <div className="sector-watermark">04</div>
         <div className="sector-floating-badge">
           <span className="pulse-indicator" />
           <span>SPONSORS</span>

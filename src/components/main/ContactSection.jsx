@@ -23,13 +23,7 @@ export default function ContactSection({ active, progress }) {
       }}
     >
       <div className="pinned-content-stage">
-        {/* Sector Watermark & Floating Badge (Fade out as section reaches final centered state) */}
-        <div
-          className="sector-watermark"
-          style={{ opacity: Math.max(0, 0.03 * (1 - centerEase * 1.5)) }}
-        >
-          04
-        </div>
+        {/* Floating Badge (Fade out as section reaches final centered state) */}
         <div
           className="sector-floating-badge"
           style={{ opacity: Math.max(0, 1 - centerEase * 2) }}

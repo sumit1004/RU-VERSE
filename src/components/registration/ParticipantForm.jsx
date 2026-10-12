@@ -74,7 +74,7 @@ export default function ParticipantForm({
               type="text"
               value={fixed.fullName || ''}
               onChange={(e) => handleFixedChange('fullName', e.target.value)}
-              placeholder="e.g. John Doe"
+              placeholder="Sumit Kumar"
               disabled={disabled}
               className={`reg-form-input ${errors[`participants.${index}.fixed.fullName`] ? 'is-invalid' : ''}`}
             />
@@ -94,7 +94,7 @@ export default function ParticipantForm({
               type="email"
               value={fixed.email || ''}
               onChange={(e) => handleFixedChange('email', e.target.value)}
-              placeholder="e.g. participant@domain.com"
+              placeholder="sumitkumar042006@gmail.com"
               disabled={disabled}
               className={`reg-form-input ${errors[`participants.${index}.fixed.email`] ? 'is-invalid' : ''}`}
             />
@@ -114,7 +114,7 @@ export default function ParticipantForm({
               type="tel"
               value={fixed.mobile || ''}
               onChange={(e) => handleFixedChange('mobile', e.target.value)}
-              placeholder="10-digit mobile number"
+              placeholder="9876543210"
               disabled={disabled}
               className={`reg-form-input ${errors[`participants.${index}.fixed.mobile`] ? 'is-invalid' : ''}`}
             />
@@ -134,7 +134,7 @@ export default function ParticipantForm({
               type="text"
               value={fixed.college || ''}
               onChange={(e) => handleFixedChange('college', e.target.value)}
-              placeholder="e.g. Rajarajeswari College of Engineering"
+              placeholder="Rungta International Skills University"
               disabled={disabled}
               className={`reg-form-input ${errors[`participants.${index}.fixed.college`] ? 'is-invalid' : ''}`}
             />

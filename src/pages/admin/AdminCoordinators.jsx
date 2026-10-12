@@ -496,7 +496,7 @@ export default function AdminCoordinators() {
                       <input
                         type="text"
                         className="admin-input"
-                        placeholder="e.g. Alex Johnson"
+                        placeholder="Sumit Kumar"
                         value={createForm.name}
                         onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                         required
@@ -507,7 +507,7 @@ export default function AdminCoordinators() {
                       <input
                         type="email"
                         className="admin-input"
-                        placeholder="coord@ruverse.in"
+                        placeholder="sumitkumar042006@gmail.com"
                         value={createForm.email}
                         onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                         required

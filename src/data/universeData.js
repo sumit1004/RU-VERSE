@@ -10,27 +10,30 @@ export const universeSections = [
   {
     id: 'ru-verse',
     sector: '01',
+    title: 'ABOUT RUVERSE',
+    tagline: 'ORIGIN TRANSMISSION // A LONG TIME AGO...',
+    entry: 'top-left',
+    color: '#b29cff',
+    model: ASSETS.ruVerse,
+    description: ' RUVERSE is the annual technical festival of Rungta International Skills University, bringing together four days of technology, innovation, competitions, workshops, showcases and experiences.',
+    cta: 'EXPLORE RU',
+    targetAnchor: '#section-about',
+    coordinates: '26.44° N / 73.22° E'
+  },
+  {
+    id: 'ru-verse',
+    sector: '02',
     title: 'About RU',
     tagline: 'Legacy Wahi Sapne Naye',
-    entry: 'top-left',
+    entry: 'top-right',
     color: '#5eb9ff',
-    model: ASSETS.ruVerse,
+    model: ASSETS.about,
     description: 'Rungta University came into being only after Rungta Group of Institutions developed enough expertise and Academic Maturity in last 26 years, now ready to leverage upon it and succeeding in nurturing Future ready professionals equipped with future ready skills.',
     cta: 'EXPLORE RU',
     targetAnchor: '#section-about',
     coordinates: '19.12° N / 81.36° E'
   },
-  {
-    id: 'about',
-    sector: '02',
-    title: 'ABOUT RUVERSE',
-    tagline: 'ORIGIN TRANSMISSION // A LONG TIME AGO...',
-    entry: 'top-right',
-    color: '#b29cff',
-    model: ASSETS.about,
-    description: ' RUVERSE is the annual technical festival of Rungta International Skills University, bringing together four days of technology, innovation, competitions, workshops, showcases and experiences.',
-    coordinates: '26.44° N / 73.22° E'
-  },
+
   {
     id: 'events',
     sector: '03',
@@ -56,7 +59,7 @@ export const universeSections = [
     targetAnchor: '#section-contact',
     coordinates: '21.19° N / 89.51° E',
     email: 'ruverse@rungta.ac.in',
-    instagramUrl: 'https://instagram.com/ruverse.rungta',
+    instagramUrl: 'https://www.instagram.com/rungtaverse/',
     collegeUrl: 'https://rungta.ac.in',
     contacts: [
       { name: 'Shraddha Tiwari', phone: '+91 9302787061' },

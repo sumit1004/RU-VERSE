@@ -40,7 +40,7 @@ export default function HeroSection({ active = true, progress = 0 }) {
         <div className="hero-logo-wrapper">
           <div className="hero-logo-reveal-container">
             <img
-              src="/models/planets/techfest.png"
+              src="/models/planets/logo.png"
               alt="RUVERSE 2026 Logo"
               className="hero-logo-img"
               style={{

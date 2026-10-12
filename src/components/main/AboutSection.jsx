@@ -12,7 +12,6 @@ export default function AboutSection({ active, progress }) {
       className={`universe-pinned-section section-about ${active ? 'is-active-section' : ''}`}
     >
       <div className="pinned-content-stage">
-        <div className="sector-watermark">02</div>
         <div className="sector-floating-badge">
           <span className="pulse-indicator" />
           <span>ABOUT VECTOR</span>
@@ -32,13 +31,12 @@ export default function AboutSection({ active, progress }) {
           <div className="editorial-story-flow">
 
             <p className="editorial-body">
+              Born from the 27-year legacy of the Rungta Group, Rungta University is built for a generation that refuses to learn inside a box.
 
-              In a university not so far away, a group of students decided that technology deserved more than classrooms and assignments. They wanted a place to build, compete, experiment, explore and create. And so, RUVERSE was born.
             </p>
             <p className="editorial-galaxy">
-              From young Padawans taking their first steps into technology to
-              experienced Jedi building what comes next, there is a place for
-              everyone in this galaxy.
+              At RU, technology, skills, creativity and industry come together to shape future-ready professionals and create an ecosystem where ideas are meant to be built.
+
             </p>
           </div>
         </div>

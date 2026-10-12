@@ -35,7 +35,6 @@ export default function EventsSection({ active, progress }) {
       className={`universe-pinned-section section-events ${active ? 'is-active-section' : ''}`}
     >
       <div className="pinned-content-stage">
-        <div className="sector-watermark">03</div>
         <div className="sector-floating-badge">
           <span className="pulse-indicator" />
           <span>EVENTS VECTOR</span>

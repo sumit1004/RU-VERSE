@@ -214,7 +214,7 @@ animation: ruverseIndicatorPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(0, 229, 255, 0.3);
-    border-radius: 24px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -233,7 +233,7 @@ animation: ruverseIndicatorPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     font-size: 9.5px;
     letter-spacing: 0.08em;
     gap: 0;
-    border-radius: 19px;
+    border-radius: 0;
   }
 
   .ruverse-nav-item__index {
