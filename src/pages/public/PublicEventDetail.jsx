@@ -5,7 +5,6 @@ import {
   formatISTDate,
   formatISTTime,
   formatISTDateTime,
-  formatDateRange,
   formatTimeRange,
   getRegistrationStatus,
 } from '../../utils/eventDateTime';
@@ -114,7 +113,6 @@ export default function PublicEventDetail() {
   const statusInfo = getRegistrationStatus(event);
 
   // Formatted date and time strings
-  const formattedDates = formatDateRange(event.startDateTime, event.endDateTime);
   const formattedTimes = formatTimeRange(event.startDateTime, event.endDateTime);
   const registrationTypeLabel =
     event.registrationType === 'TEAM'
@@ -162,11 +160,6 @@ export default function PublicEventDetail() {
             <div className="event-spec-item">
               <span className="event-spec-label">Venue</span>
               <span className="event-spec-value">{event.venue || 'TBD'}</span>
-            </div>
-
-            <div className="event-spec-item">
-              <span className="event-spec-label">Date</span>
-              {/* <span className="event-spec-value">{formattedDates || 'FEB'}</span> */}
             </div>
 
             {formattedTimes && (

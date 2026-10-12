@@ -9,20 +9,22 @@ export function mapApiEventToPublicEvent(apiEvent, index = 0) {
   const catSlug = apiEvent.category?.slug || 'tech';
   
   // Format date range nicely
-  let dates = ['FEB 2026'];
-  if (apiEvent.startDate) {
+  let dates = [];
+  const start = apiEvent.startDateTime || apiEvent.startDate;
+  const end = apiEvent.endDateTime || apiEvent.endDate;
+  if (start) {
     try {
-      const s = new Date(apiEvent.startDate);
+      const s = new Date(start);
       const sStr = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      if (apiEvent.endDate) {
-        const e = new Date(apiEvent.endDate);
+      if (end) {
+        const e = new Date(end);
         const eStr = e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         dates = [sStr, eStr];
       } else {
         dates = [s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })];
       }
     } catch {
-      dates = ['FEB 2026'];
+      dates = [];
     }
   }
 

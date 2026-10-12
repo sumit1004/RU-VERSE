@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatEventDates } from '../../data/eventsData';
 
 /**
  * EventCard Component:
@@ -15,7 +14,6 @@ export default function EventCard({ event, categoryLabelMap = {}, onViewRegistra
   const regUrl = event.registrationUrl || (event.slug ? `/events/${event.slug}/register` : null);
   const hasUrl = Boolean(regUrl && String(regUrl).trim() !== '');
   const isExternal = hasUrl && (String(regUrl).startsWith('http://') || String(regUrl).startsWith('https://'));
-  const formattedDate = formatEventDates(event.dates);
 
   // Normalize categories array
   const eventCategories = Array.isArray(event.categories)
@@ -53,9 +51,6 @@ export default function EventCard({ event, categoryLabelMap = {}, onViewRegistra
         </span>
 
         <div className="event-card-badges">
-          {formattedDate && (
-            <span className="event-card-date-badge">{formattedDate}</span>
-          )}
           {eventCategories.map((catId) => (
             <span key={catId} className="event-card-category">
               {categoryLabelMap[catId] || catId}
