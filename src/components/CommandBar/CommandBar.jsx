@@ -19,7 +19,7 @@ export default function CommandBar({ active = -1, onNavigate }) {
     { id: 'home', label: 'HOME', target: -1, isActive: active === -1 },
     { id: 'about', label: 'ABOUT', target: 0, isActive: active === 0 || active === 1 },
     { id: 'events', label: 'EVENTS', target: 2, isActive: active === 2 },
-    { id: 'contact', label: 'CONTACT', target: 4, isActive: active === 4 },
+    { id: 'contact', label: 'CONTACT', target: 5, isActive: active === 5 },
   ];
 
   return (

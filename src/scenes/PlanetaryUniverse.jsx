@@ -61,8 +61,8 @@ export default function PlanetaryUniverse({
       const entryPos = baseFocusWorld.clone().add(entryOffset);
       const exitPos = baseFocusWorld.clone().add(exitOffset);
 
-      // Check current section state (Contact is index 4 since Sponsors is 2D section index 3)
-      const targetSectionIdx = sec.id === 'contact' ? 4 : idx;
+      // Check current section state (Contact is index 5 since Sponsors is 3 and Organising Team is 4)
+      const targetSectionIdx = sec.id === 'contact' ? 5 : idx;
       const isCurrent = (calibrationEnabled && activeSectionKey === secKey) || activeSection === targetSectionIdx;
       const isPast = activeSection > targetSectionIdx && !calibrationEnabled;
       const isFuture = activeSection < targetSectionIdx && !calibrationEnabled;

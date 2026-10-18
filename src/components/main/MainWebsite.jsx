@@ -7,6 +7,7 @@ import RUVerseSection from './RUVerseSection';
 import AboutSection from './AboutSection';
 import EventsSection from './EventsSection';
 import SponsorsSection from './SponsorsSection';
+import OrganisingTeamSection from './OrganisingTeamSection';
 import ContactSection from './ContactSection';
 import ScrollCue from './ScrollCue';
 import CommandBar from '../CommandBar/CommandBar';
@@ -185,16 +186,21 @@ export default function MainWebsite({ quality }) {
           progress={activeSection === 3 ? sectionProgress : 0}
         />
 
-        <ContactSection
+        <OrganisingTeamSection
           active={activeSection === 4}
           progress={activeSection === 4 ? sectionProgress : 0}
+        />
+
+        <ContactSection
+          active={activeSection === 5}
+          progress={activeSection === 5 ? sectionProgress : 0}
         />
       </main>
 
       {/* 4. Single Viewport-Anchored Fixed Scroll Indicator (0px layout contribution) */}
       <ScrollCue
-        text={activeSection === 4 ? 'TRANSMISSION COMPLETE' : 'SCROLL TO NAVIGATE DEEP SPACE'}
-        isEnd={activeSection === 4}
+        text={activeSection === 5 ? 'TRANSMISSION COMPLETE' : 'SCROLL TO NAVIGATE DEEP SPACE'}
+        isEnd={activeSection === 5}
       />
     </div>
   );

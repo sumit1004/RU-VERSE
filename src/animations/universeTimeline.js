@@ -39,6 +39,59 @@ export function createUniverseTimeline({ onSectionUpdate }) {
   const sections = document.querySelectorAll('.universe-pinned-section');
   sections.forEach((section, index) => {
     const isContact = section.id === 'section-contact';
+    const isTeam = section.id === 'section-organising-team';
+
+    // Horizontal Scroll Slider for Organising Team (Pinned Viewport + Exact Progress Drive)
+    if (isTeam) {
+      const track = section.querySelector('#team-cards-track');
+      const viewport = section.querySelector('.team-cards-viewport');
+
+      const calculateTravelDistance = () => {
+        if (!track || !viewport) return 0;
+        const lastCard = track.querySelector('.organiser-card:last-child');
+        const style = window.getComputedStyle(track);
+        const endPadding = parseFloat(style.paddingRight) || 72;
+        const totalContentWidth = lastCard
+          ? (lastCard.offsetLeft + lastCard.offsetWidth + endPadding)
+          : track.scrollWidth;
+        const viewportWidth = viewport.clientWidth || window.innerWidth;
+        return Math.max(0, Math.ceil(totalContentWidth - viewportWidth));
+      };
+
+      const trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: () => `+=${calculateTravelDistance()}`,
+        pin: true,
+        pinSpacing: true,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const dist = calculateTravelDistance();
+          gsap.set(track, {
+            x: -self.progress * dist,
+            force3D: true,
+          });
+          if (self.isActive) {
+            onSectionUpdate(index, self.progress);
+          }
+        },
+        onToggle: (self) => {
+          const dist = calculateTravelDistance();
+          if (self.isActive) {
+            onSectionUpdate(index, self.progress);
+          } else if (self.progress >= 1) {
+            gsap.set(track, { x: -dist, force3D: true });
+          } else if (self.progress <= 0) {
+            gsap.set(track, { x: 0, force3D: true });
+          }
+        },
+      });
+
+      triggers.push(trigger);
+      return;
+    }
+
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
@@ -89,8 +142,12 @@ export function createUniverseTimeline({ onSectionUpdate }) {
 
     const targetTrigger = planetTriggers[targetIndex];
     if (targetTrigger) {
-      // For Contact (index 4), land at 0.35 where HUD and 3D model are locked; for others land at 0.50 midpoint
-      const landingRatio = targetIndex === 4 ? 0.35 : 0.50;
+      // For Contact (last section / index 5), land at 0.35 where HUD and 3D model are locked;
+      // For Organising Team (index 4), land at 0.02 (at Card 1);
+      // For other planetary sectors, land at 0.50 midpoint
+      const isContact = targetIndex === 5 || targetIndex === planetTriggers.length - 1;
+      const isTeam = targetIndex === 4;
+      const landingRatio = isContact ? 0.35 : isTeam ? 0.02 : 0.50;
       const targetScroll = targetTrigger.start + (targetTrigger.end - targetTrigger.start) * landingRatio;
       gsap.to(window, {
         scrollTo: { y: Math.round(targetScroll), autoKill: true },
