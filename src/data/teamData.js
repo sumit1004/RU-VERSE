@@ -43,23 +43,23 @@ export const ORGANISERS = [
     role: 'Technical Lead',
     image: '/images/sumit.jpeg',
   },
-
   {
     id: 'organiser-05',
-    name: 'Krishna Kumar',
-    role: 'Media Lead',
-    image: '/images/krishna.jpeg',
-  },
-  {
-    id: 'organiser-06',
     name: 'Arman misha',
     role: 'Outreach Lead',
     image: '/images/arman.jpeg',
   },
   {
+    id: 'organiser-06',
+    name: 'Krishna Kumar',
+    role: 'Media Lead',
+    image: '/images/krishna.jpeg',
+  },
+
+  {
     id: 'organiser-07',
     name: 'Arsh chakroborty',
-    role: 'sponser lead',
+    role: 'sponsor lead',
     image: '/images/arsh.jpeg',
   },
 
@@ -84,31 +84,31 @@ export const ORGANISERS = [
   {
     id: 'organiser-11',
     name: 'Ansh',
-    role: 'Web Systems Lead',
+    role: 'Event management',
     image: '/images/ansh.jpeg',
   },
   {
     id: 'organiser-12',
     name: 'Chhavi patel ',
-    role: 'sponser lead',
+    role: 'Sponsor lead',
     image: '/images/chaavi.jpeg',
   },
   {
     id: 'organiser-13',
     name: 'Pranjal dewangan',
-    role: 'media team',
+    role: 'Media Team',
     image: '/images/pranjal.jpeg',
   },
   {
     id: 'organiser-14',
     name: 'Megha pandey',
-    role: 'event management',
+    role: 'Event Management',
     image: '/images/megha.jpeg',
   },
   {
     id: 'organiser-15',
     name: 'Utsav kumar',
-    role: 'Sponser team',
+    role: 'Sponsor team',
     image: '/images/utsav.jpeg',
   },
   {
