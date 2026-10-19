@@ -17,6 +17,7 @@ export const universeSections = [
     model: ASSETS.ruVerse,
     description: ' RUVERSE is the annual technical festival of Rungta International Skills University, bringing together four days of technology, innovation, competitions, workshops, showcases and experiences.',
     cta: 'EXPLORE RU',
+    url: 'https://www.instagram.com/rungtaverse/',
     targetAnchor: '#section-about',
     coordinates: '26.44° N / 73.22° E'
   },
@@ -30,6 +31,7 @@ export const universeSections = [
     model: ASSETS.about,
     description: 'Rungta University came into being only after Rungta Group of Institutions developed enough expertise and Academic Maturity in last 26 years, now ready to leverage upon it and succeeding in nurturing Future ready professionals equipped with future ready skills.',
     cta: 'EXPLORE RU',
+    url: 'https://rungta.ac.in/',
     targetAnchor: '#section-about',
     coordinates: '19.12° N / 81.36° E'
   },
@@ -58,7 +60,6 @@ export const universeSections = [
     cta: 'CONNECT WITH US',
     targetAnchor: '#section-contact',
     coordinates: '21.19° N / 89.51° E',
-    email: 'ruverse@rungta.ac.in',
     instagramUrl: 'https://www.instagram.com/rungtaverse/',
     collegeUrl: 'https://rungta.ac.in',
     contacts: [

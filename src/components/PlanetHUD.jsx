@@ -25,13 +25,27 @@ export default function PlanetHUD({ section, active, progress, onCtaClick }) {
       onCtaClick(section);
       return;
     }
+
+    // External URL handling (explicit URL or URL-style targetAnchor)
+    const externalLink = section.url || (section.targetAnchor && /^https?:\/\//i.test(section.targetAnchor) ? section.targetAnchor : null);
+    if (externalLink) {
+      window.open(externalLink, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Sector 02 ("About RU") EXPLORE RU opens Instagram
+    if (section.sector === '02' || section.title === 'About RU') {
+      window.open('https://www.instagram.com/rungtaverse/', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (section.id === 'ru-verse' && window.__navigateToSection) {
       window.__navigateToSection(1);
     } else if (section.id === 'about' && window.__navigateToSection) {
       window.__navigateToSection(2);
     } else if (section.id === 'events' && window.__navigateToSection) {
       window.__navigateToSection(3);
-    } else if (section.targetAnchor) {
+    } else if (section.targetAnchor && section.targetAnchor.startsWith('#')) {
       const targetEl = document.querySelector(section.targetAnchor);
       if (targetEl) {
         targetEl.scrollIntoView({ behavior: 'smooth' });
